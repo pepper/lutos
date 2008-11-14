@@ -1,3 +1,11 @@
+/**
+ * @file	共用排程模組的標頭檔
+ * @brief	提供使用者高自由度的工作排程功能，讓使用者可以利用本模組內含的排程系統以及事件處發機制，進行程式流程控管，並可進行『不同觸發來源』的集體管理。
+ * @author	嚴孝頤（pepper.yen@gmail.com）
+ * @version	0.0.1
+ * @date	2008-11-14
+ */
+
 #ifndef CORESCHEDULER_H
 #define CORESCHEDULER_H
 
