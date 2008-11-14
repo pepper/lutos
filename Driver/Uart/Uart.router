@@ -1,0 +1,15 @@
+#ifndef	UART_ROUTER
+#define	UART_ROUTER
+
+#if defined(SystemInformation_AVR)
+	#if defined(SystemInformation_DeviceATmega128) || defined(SystemInformation_DeviceAT90CAN128)
+		//Define Devices
+		#define	Uart_Uart0Exist
+		#define	Uart_Uart1Exist
+		
+		//Define Register
+		
+	#endif
+#endif
+
+#endif
