@@ -14,6 +14,8 @@ struct CoreScheduler_QueueItem{
 typedef struct CoreScheduler_QueueItem CoreScheduler_QueueItem;
 typedef struct CoreScheduler_QueueItem *CoreScheduler_QueueItemRef;
 
+//To Be Fix: Add a preconstruct Quese Box(DO NOT USE ALLOC FUNCTION !!!)
+
 CoreScheduler_QueueItemRef	CoreScheduler_HeadJob;
 CoreScheduler_QueueItemRef	CoreScheduler_FootJob;
 Data_4Byte					CoreScheduler_CurrentJobQuantity;
