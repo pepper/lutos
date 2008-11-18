@@ -50,7 +50,7 @@ static const CoreScheduler_JobID	CoreScheduler_JobPermutationAndCombination[] = 
  *  定義樹狀工作狀態表的中間節點，節點子元素可以指向『節點』或『末枝節點』。
  */ 
 struct CoreScheduler_JobTreeNodeType {
-	Data_1Byte								childStatus;	///< 代表此 Node 底下的 Child Node 是否有工作被觸發
+	Data_1Byte								childStatus[2];	///< 代表此 Node 底下的 Child Node 是否有工作被觸發
 	//struct CoreScheduler_JobTreeNodeType	*parent;		///< 上層元素（觸發事件時回追設定用）
 	//void									*child[4];		///< 子元素（可以指向『節點』或『末枝節點』，由執行期定義）
 };
@@ -61,19 +61,19 @@ typedef struct CoreScheduler_JobTreeNodeType CoreScheduler_JobTreeNodeType;
  */ 
 struct CoreScheduler_JobTreeLeafType {
 	//struct CoreScheduler_JobTreeNodeType	*parent;							///< 上層元素（觸發事件時回追設定用）
-	Data_1Byte								jobStatus;							///< 代表此節點指向的四個工作的觸發狀態（Most 4-Bit 代表重複觸發、Last 4-Bit 代表觸發狀態）
+	Data_1Byte								jobStatus[2];							///< 代表此節點指向的四個工作的觸發狀態（Most 4-Bit 代表重複觸發、Last 4-Bit 代表觸發狀態）
 #if defined(CoreScheduler_CheckRetrig)
 	Data_1Byte								jobAllowRetrigMask;					///< 設定指向的工作是否允許重複觸發（預設為允許觸發）
-	Data_1Byte								jobTrigTimes[4];					///< 距上次檢查後被觸發的次數，若允許重複觸發就會 Push N 次至 Job Queue 中
+	Data_1Byte								jobTrigTimes[2][4];					///< 距上次檢查後被觸發的次數，若允許重複觸發就會 Push N 次至 Job Queue 中
 #endif
 	void									(*jobExecuteFunction[4])(void);		///< 工作觸發後要執行之函數的指標（無傳參）
 };
 typedef struct CoreScheduler_JobTreeLeafType CoreScheduler_JobTreeLeafType;
 
-CoreScheduler_JobTreeNodeType	*CoreScheduler_JobTreeNode[2][CoreScheduler_Level - 1];
+CoreScheduler_JobTreeNodeType	*CoreScheduler_JobTreeNode[CoreScheduler_Level - 1];
 
 ///包含四個工作的末枝節點，共會有 Level^4 個
-CoreScheduler_JobTreeLeafType	CoreScheduler_JobTreeLeaf[2][CoreScheduler_JobCapability];
+CoreScheduler_JobTreeLeafType	CoreScheduler_JobTreeLeaf[CoreScheduler_JobCapability];
 
 ///代表外部模組目前可以改變的狀態旗標
 Data_1Byte	CoreScheduler_CurrentCollectBuffer;
