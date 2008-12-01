@@ -1,7 +1,7 @@
 #include "CoreScheduler.h"
 
 void CoreScheduler_Init(void){
-	Data_1Byte i, j;
+	Data_2Byte i, j;
 	//Initialize Core Scheduler State
 	CoreScheduler_QueueInit();
 	CoreScheduler_CurrentCollectBuffer = 0;
@@ -18,7 +18,7 @@ void CoreScheduler_Init(void){
 #if defined(CoreScheduler_CheckRetrig)
 			Data_1Byte k;
 			for(k = 0; k < 4; k++ ){
-				CoreScheduler_JobTreeLeaf[i].jobTrigTimes[j][k] = 0;				
+				CoreScheduler_JobTreeLeaf[i].jobTrigTimes[k][j] = 0;				
 			}
 #endif
 		}
@@ -47,32 +47,47 @@ void CoreScheduler_Init(void){
 
 //To Be Fix: Only Support Level<=4 Now
 void CoreScheduler_RegisterJob(CoreScheduler_JobID id, void (*function)(void)){
-	CoreScheduler_JobTreeLeaf[id >> 2].jobExecuteFunction[id & 0xFC] = function;
+	CoreScheduler_JobTreeLeaf[id >> 2].jobExecuteFunction[id & 0x03] = function;
 }
 
 void CoreScheduler_NeedToWork(CoreScheduler_JobID id){
-	CoreScheduler_JobTreeLeaf[id >> 2].jobStatus[CoreScheduler_CurrentCollectBuffer] |= (1 << id);
+	CoreScheduler_JobTreeLeaf[id >> 2].jobStatus[CoreScheduler_CurrentCollectBuffer] |= (1 << (id & 0x03));
 #if defined(CoreScheduler_CheckRetrig)
 //STILL NOT FINISHED !!!
-	//CoreScheduler_JobStatus |= (((CoreScheduler_JobStatus & (1 << id)) == 0)? (1 << id):(1 << (id + 4)) );
-	//CoreScheduler_JobTrigTimes[id]++;
+	CoreScheduler_JobTreeLeaf[id >> 2].jobStatus[CoreScheduler_CurrentCollectBuffer] |= (((CoreScheduler_JobTreeLeaf[id >> 2].jobStatus[CoreScheduler_CurrentCollectBuffer] & (1 << (id & 0x03))) == 0)? (1 << (id & 0x03)):(1 << ((id & 0x03) + 4)));
+	CoreScheduler_JobTreeLeaf[id >> 2].jobTrigTimes[id & 0x03][CoreScheduler_CurrentCollectBuffer]++;
+#endif
+
+//Set parent node
+	id = id >> 2;
+#if CoreScheduler_Level > 3
+	CoreScheduler_JobTreeNode[2][id >> 2].childStatus[CoreScheduler_CurrentCollectBuffer] |= (1 << (id & 0x03));
+	id = id >> 2;
+#endif
+#if CoreScheduler_Level > 2
+	CoreScheduler_JobTreeNode[1][id >> 2].childStatus[CoreScheduler_CurrentCollectBuffer] |= (1 << (id & 0x03));
+	id = id >> 2;
+#endif
+#if CoreScheduler_Level > 1
+	CoreScheduler_JobTreeNode[0][0].childStatus[CoreScheduler_CurrentCollectBuffer] |= (1 << id);
 #endif
 }
 
 #if defined(CoreScheduler_CheckRetrig)
-//STILL NOT FINISHED !!!
 void CoreScheduler_AllowRetrigger(CoreScheduler_JobID id, Data_Boolean enable){
 	if(enable == TRUE){
-		SetBit(CoreScheduler_JobAllowRetrigMask, (id + 4));
+		SetBit(CoreScheduler_JobTreeLeaf[id >> 2].jobAllowRetrigMask, ((id & 0x03) + 4));
 	}
 	else{
-		ClearBit(CoreScheduler_JobAllowRetrigMask, (id + 4));
+		ClearBit(CoreScheduler_JobTreeLeaf[id >> 2].jobAllowRetrigMask, ((id & 0x03) + 4));
 	}
 }
 #endif
 
+//STILL NOT FINISHED !!!
 void CoreScheduler_RunLoop(void){
 	while(1){
+		//Using to pause
 		while(1){
 			CoreScheduler_CheckAndPush();
 			CoreScheduler_Execute();
@@ -84,40 +99,49 @@ void CoreScheduler_Execute(void){
 	Data_Boolean hasItem;
 	CoreScheduler_JobID id = CoreScheduler_QueuePop(&hasItem);
 	if(hasItem == TRUE){
-		CoreScheduler_JobExecuteFunction[id]();
+		CoreScheduler_JobTreeLeaf[id >> 2].jobExecuteFunction[id & 0x03]();
 	}
 }
 
+//STILL NOT FINISHED !!!
 void CoreScheduler_CheckAndPush(void){
+	Data_1Byte i;
+	Data_1Byte CoreScheduler_CurrentCheckBuffer = CoreScheduler_CurrentCollectBuffer;
 	
 	cli();	//Disable Interrupt
 	//AVR interrupt triggered by set the interrupt flag, so that event occur during Disable Interrupt time will trig after Enable Interrupt
 	//For other CPU make sure to check this point !!!
-	CoreScheduler_CurrentCollectBuffer = (CoreScheduler_CurrentCollectBuffer + 1) % 2;
+	CoreScheduler_CurrentCollectBuffer = (CoreScheduler_CurrentCollectBuffer + 1) & 0x01;
 	sei();	//Enable Interrupt After 4 CPU Clock
-
-	Data_1Byte JobStatus = CoreScheduler_JobStatus;	
-	CoreScheduler_JobStatus = 0;
 	
-	JobStatus &= CoreScheduler_JobAllowRetrigMask;
+#if CoreScheduler_Level > 1
+	
+#else
+	Data_1Byte JobStatus = CoreScheduler_JobTreeLeaf[0].jobStatus[CoreScheduler_CurrentCheckBuffer];
 	Data_1Byte start = CoreScheduler_JobLookUpTable[JobStatus & 0x0F].start;
 	Data_1Byte end = start + CoreScheduler_JobLookUpTable[JobStatus & 0x0F].number;
-	
-	Data_1Byte i;
+#if defined(CoreScheduler_CheckRetrig)
+	Data_2Byte j;
+	JobStatus &= CoreScheduler_JobTreeLeaf[0].jobAllowRetrigMask;
 	for(i = start; i < end; i++){
 		if((0x10 << CoreScheduler_JobPermutationAndCombination[i]) & JobStatus){
-			Data_1Byte j;
-			for(j = 0; j < CoreScheduler_JobTrigTimes[CoreScheduler_JobPermutationAndCombination[i]]; j++ ){
+			for(j = 0; j < CoreScheduler_JobTreeLeaf[0].jobTrigTimes[CoreScheduler_JobPermutationAndCombination[i]][CoreScheduler_CurrentCheckBuffer]; j++ ){
 				CoreScheduler_QueuePush(CoreScheduler_JobPermutationAndCombination[i]);
 			}
 		}
 		else{
 			CoreScheduler_QueuePush(CoreScheduler_JobPermutationAndCombination[i]);
 		}
-		CoreScheduler_JobTrigTimes[i] = 0;
+		CoreScheduler_JobTreeLeaf[0].jobTrigTimes[CoreScheduler_JobPermutationAndCombination[i]][CoreScheduler_CurrentCheckBuffer] = 0;
 	}
-	
-	//Be sure to Zero CoreScheduler_JobStatus
+#else
+	for(i = start; i < end; i++){
+		CoreScheduler_QueuePush(CoreScheduler_JobPermutationAndCombination[i]);
+	}
+#endif
+	CoreScheduler_JobTreeLeaf[0].jobStatus[CoreScheduler_CurrentCheckBuffer] = 0;
+#endif
+
 }
 
 //void	CoreScheduler_Pause(Data_1Byte type);
