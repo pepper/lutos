@@ -118,25 +118,25 @@ void CoreScheduler_CheckAndPush(void){
 	
 #else
 	Data_1Byte JobStatus = CoreScheduler_JobTreeLeaf[0].jobStatus[CoreScheduler_CurrentCheckBuffer];
-	Data_1Byte start = CoreScheduler_JobLookUpTable[JobStatus & 0x0F].start;
-	Data_1Byte end = start + CoreScheduler_JobLookUpTable[JobStatus & 0x0F].number;
+	Data_1Byte start = pgm_read_dword(&(CoreScheduler_JobLookUpTableStart[JobStatus & 0x0F]));
+	Data_1Byte end = start + pgm_read_byte(&(CoreScheduler_JobLookUpTableNumber[JobStatus & 0x0F]));
 #if defined(CoreScheduler_CheckRetrig)
 	Data_2Byte j;
 	JobStatus &= CoreScheduler_JobTreeLeaf[0].jobAllowRetrigMask;
 	for(i = start; i < end; i++){
-		if((0x10 << CoreScheduler_JobPermutationAndCombination[i]) & JobStatus){
-			for(j = 0; j < CoreScheduler_JobTreeLeaf[0].jobTrigTimes[CoreScheduler_JobPermutationAndCombination[i]][CoreScheduler_CurrentCheckBuffer]; j++ ){
-				CoreScheduler_QueuePush(CoreScheduler_JobPermutationAndCombination[i]);
+		if((0x10 << pgm_read_byte(&(CoreScheduler_JobPermutationAndCombination[i]))) & JobStatus){
+			for(j = 0; j < CoreScheduler_JobTreeLeaf[0].jobTrigTimes[pgm_read_byte(&(CoreScheduler_JobPermutationAndCombination[i]))][CoreScheduler_CurrentCheckBuffer]; j++ ){
+				CoreScheduler_QueuePush(pgm_read_byte(&(CoreScheduler_JobPermutationAndCombination[i])));
 			}
 		}
 		else{
-			CoreScheduler_QueuePush(CoreScheduler_JobPermutationAndCombination[i]);
+			CoreScheduler_QueuePush(pgm_read_byte(&(CoreScheduler_JobPermutationAndCombination[i])));
 		}
-		CoreScheduler_JobTreeLeaf[0].jobTrigTimes[CoreScheduler_JobPermutationAndCombination[i]][CoreScheduler_CurrentCheckBuffer] = 0;
+		CoreScheduler_JobTreeLeaf[0].jobTrigTimes[pgm_read_byte(&(CoreScheduler_JobPermutationAndCombination[i]))][CoreScheduler_CurrentCheckBuffer] = 0;
 	}
 #else
 	for(i = start; i < end; i++){
-		CoreScheduler_QueuePush(CoreScheduler_JobPermutationAndCombination[i]);
+		CoreScheduler_QueuePush(pgm_read_byte(&(CoreScheduler_JobPermutationAndCombination[i])));
 	}
 #endif
 	CoreScheduler_JobTreeLeaf[0].jobStatus[CoreScheduler_CurrentCheckBuffer] = 0;

@@ -10,6 +10,7 @@
 #define CORESCHEDULER_H
 
 #include <avr/interrupt.h>
+#include <avr/pgmspace.h>
 
 #include "../CoreBasicTypeDefine.h"
 #include "../CoreBasicFunctionAndVariable/CoreBasicFunctionAndVariable.h"
@@ -29,7 +30,7 @@
 /** @struct CoreScheduler_JobLookUpTableType 
  *  定義查表 Index 型別
  */ 
-struct CoreScheduler_JobLookUpTableType{
+/*struct CoreScheduler_JobLookUpTableType{
 	Data_1Byte start;
 	Data_1Byte number;
 };
@@ -40,9 +41,17 @@ static const CoreScheduler_JobLookUpTableType	CoreScheduler_JobLookUpTable[] = {
 	{2, 1}, {4, 2}, {1, 2}, {0, 3},
 	{3, 1}, {10, 2}, {8, 2}, {7, 3},
 	{2, 2}, {4, 3}, {1, 3}, {0, 4}
+};*/
+
+static const Data_2Byte	CoreScheduler_JobLookUpTableStart[] PROGMEM = {
+	0, 0, 1, 0, 2, 4, 1, 0, 3, 10, 8, 7, 2, 4, 1, 0
 };
 
-static const CoreScheduler_JobID	CoreScheduler_JobPermutationAndCombination[] = {
+static const Data_1Byte	CoreScheduler_JobLookUpTableNumber[] PROGMEM = {
+	0, 1, 1, 2, 1, 2, 2, 3, 1, 2, 2, 3, 2, 3, 3, 4
+};
+
+static const CoreScheduler_JobID	CoreScheduler_JobPermutationAndCombination[] PROGMEM = {
 	0, 1, 2, 3, 0, 2, 3, 0, 1, 3, 0, 3
 };
 
