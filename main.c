@@ -99,18 +99,6 @@ int main(void ){
 	CoreScheduler_JobTreeLeaf[0].jobExecuteFunction[3]();
 	_delay_ms(300.0f);*/
 	CoreScheduler_RunLoop();
-	/*CoreScheduler_QueueInit();
-	void (*job)(void) = FunctionB;
-	CoreScheduler_QueuePush(job);
-	Data_Boolean hsaJob;
-	void (*job2)(void) = CoreScheduler_QueuePop(&hsaJob);
-	job2();
-	job2();*/
-	/*if(hsaJob){
-		PORTE = 7;
-		_delay_ms(500.0f);
-		job2();
-	}*/
 	while(1);
 	return 0;
 }

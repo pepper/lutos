@@ -114,7 +114,7 @@ void CoreScheduler_CheckAndPush(void){
 	Data_2Byte i;
 	Data_1Byte jobStatusNode = CoreScheduler_JobTreeNodeLevel1.childStatus[CoreScheduler_CurrentCheckBuffer];
 	Data_2Byte jobStatusLevel1Start = pgm_read_dword(&(CoreScheduler_JobLookUpTableNodeStart[jobStatusNode]));
-	Data_2Byte jobStatusLevel1End = jobStatusLevel1Start + pgm_read_byte(&(CoreScheduler_JobLookUpTableNodeNumber[jobStatusNode]));	
+	Data_2Byte jobStatusLevel1End = jobStatusLevel1Start + pgm_read_byte(&(CoreScheduler_JobLookUpTableNodeNumber[jobStatusNode]));
 	for(i = jobStatusLevel1Start; i < jobStatusLevel1End; i++ ){
 
 //INSERT LEVEL 2 HERE!!!
