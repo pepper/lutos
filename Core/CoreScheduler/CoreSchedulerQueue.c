@@ -1,5 +1,9 @@
 #include "CoreSchedulerQueue.h"
 
+#include <avr/io.h>
+#include <util/delay.h>
+#include "Driver/Uart/Uart.h"
+
 void CoreScheduler_QueueInit(void){
 	CoreScheduler_QueueEmpty();
 	CoreScheduler_HeadJob = NULL;
@@ -14,10 +18,10 @@ void CoreScheduler_QueueEmpty(void){
 	}
 }
 
-Data_Boolean CoreScheduler_QueuePush(CoreScheduler_JobID id){
+Data_Boolean CoreScheduler_QueuePush(void (*job)(void)){
 	if(CoreScheduler_CurrentJobQuantity < CoreScheduler_MaximumQueueItemQuantrty){
 		CoreScheduler_QueueItemRef newJob = CoreMemory_Alloc(sizeof(CoreScheduler_QueueItem));
-		newJob->id = id;
+		newJob->job = job;
 		if(CoreScheduler_FootJob != NULL){
 			CoreScheduler_FootJob->next = newJob;
 			newJob->previous = CoreScheduler_FootJob;
@@ -38,11 +42,11 @@ Data_Boolean CoreScheduler_QueuePush(CoreScheduler_JobID id){
 	}
 }
 
-CoreScheduler_JobID CoreScheduler_QueuePop(Data_Boolean *hasItem){
+void (*CoreScheduler_QueuePop(Data_Boolean *hasItem))(void){
 	*hasItem = TRUE;
 	if(CoreScheduler_HeadJob != NULL){
 		CoreScheduler_QueueItemRef deleteJob = CoreScheduler_HeadJob;
-		CoreScheduler_JobID resultId = deleteJob->id;
+		void (*resultJob)(void) = deleteJob->job;
 		CoreScheduler_HeadJob = CoreScheduler_HeadJob->next;
 		if(CoreScheduler_HeadJob != NULL){
 			CoreScheduler_HeadJob->previous = NULL;
@@ -52,8 +56,8 @@ CoreScheduler_JobID CoreScheduler_QueuePop(Data_Boolean *hasItem){
 		}
 		CoreScheduler_CurrentJobQuantity--;
 		CoreMemory_Free(deleteJob);
-		return resultId;
+		return resultJob;
 	}
 	*hasItem = FALSE;
-	return (CoreScheduler_JobID)NULL;
+	return NULL;
 }

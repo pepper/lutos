@@ -238,12 +238,12 @@ AVRDUDE_FLAGS += $(AVRDUDE_ERASE_COUNTER)
 DEBUG_MFREQ = $(F_CPU)
 
 # Set the DEBUG_UI to either gdb or insight.
-# DEBUG_UI = gdb
-DEBUG_UI = insight
+ DEBUG_UI = gdb
+#DEBUG_UI = insight
 
 # Set the debugging back-end to either avarice, simulavr.
-DEBUG_BACKEND = avarice
-#DEBUG_BACKEND = simulavr
+#DEBUG_BACKEND = avarice
+DEBUG_BACKEND = simulavr
 
 # GDB Init Filename.
 GDBINIT_FILE = __avr_gdbinit

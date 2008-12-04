@@ -10,7 +10,7 @@ void CommandIn(Data_1Byte input){
 		case '2':
 		case '3':
 		case '4':
-			CoreScheduler_NeedToWork(input - '1');
+			CoreScheduler_NeedToWork((input - '1')*10);
 			break;
 	}
 }
@@ -70,45 +70,47 @@ int main(void ){
 	DDRE = 0xFF;
 	DDRD = 0xFF;
 	PORTD = 0xFF;
-	/*Data_1Byte Portd = 0x01;
-	PORTD = ~Portd;
-	_delay_ms(300.0f);
-	Portd = Portd << 1;
-	PORTD = ~Portd;
-	_delay_ms(300.0f);
-	Portd = Portd << 1;
-	PORTD = ~Portd;
-	_delay_ms(300.0f);
-	Portd = Portd << 1;
-	PORTD = ~Portd;
-	_delay_ms(300.0f);
-	*/
+
 	Uart_Init();
 	CoreScheduler_Init();
 	CoreScheduler_RegisterJob(0, FunctionA);
-	CoreScheduler_AllowRetrigger(0, TRUE);
 	Uart_Transmit(Uart_Uart1DeviceIdentify, 'A');
-	CoreScheduler_RegisterJob(1, FunctionB);
-	CoreScheduler_AllowRetrigger(1, FALSE);
+	CoreScheduler_RegisterJob(10, FunctionB);
 	Uart_Transmit(Uart_Uart1DeviceIdentify, 'B');
-	CoreScheduler_RegisterJob(2, FunctionC);
-	CoreScheduler_AllowRetrigger(2, TRUE);
+	CoreScheduler_RegisterJob(20, FunctionC);
 	Uart_Transmit(Uart_Uart1DeviceIdentify, 'C');
-	CoreScheduler_RegisterJob(3, FunctionD);
-	CoreScheduler_AllowRetrigger(3, FALSE);
+	CoreScheduler_RegisterJob(30, FunctionD);
 	Uart_Transmit(Uart_Uart1DeviceIdentify, 'D');
-	Uart_Transmit(Uart_Uart1DeviceIdentify, CoreScheduler_JobTreeLeaf[0].jobAllowRetrigMask);
+
+#if defined(CoreScheduler_CheckRetrig)
+	CoreScheduler_AllowRetrigger(0, TRUE);
+	CoreScheduler_AllowRetrigger(10, FALSE);
+	CoreScheduler_AllowRetrigger(20, TRUE);
+	CoreScheduler_AllowRetrigger(30, FALSE);
+#endif
 	
 	Uart_Uart1RXCompleteInterruptFunction = CommandIn;
-	CoreScheduler_JobTreeLeaf[0].jobExecuteFunction[0]();
+	/*CoreScheduler_JobTreeLeaf[0].jobExecuteFunction[0]();
 	_delay_ms(300.0f);
 	CoreScheduler_JobTreeLeaf[0].jobExecuteFunction[1]();
 	_delay_ms(300.0f);
 	CoreScheduler_JobTreeLeaf[0].jobExecuteFunction[2]();
 	_delay_ms(300.0f);
 	CoreScheduler_JobTreeLeaf[0].jobExecuteFunction[3]();
-	_delay_ms(300.0f);
+	_delay_ms(300.0f);*/
 	CoreScheduler_RunLoop();
+	/*CoreScheduler_QueueInit();
+	void (*job)(void) = FunctionB;
+	CoreScheduler_QueuePush(job);
+	Data_Boolean hsaJob;
+	void (*job2)(void) = CoreScheduler_QueuePop(&hsaJob);
+	job2();
+	job2();*/
+	/*if(hsaJob){
+		PORTE = 7;
+		_delay_ms(500.0f);
+		job2();
+	}*/
 	while(1);
 	return 0;
 }

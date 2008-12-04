@@ -18,40 +18,123 @@
 #include "CoreScheduler.config"
 #include "CoreSchedulerQueue.h"
 
+
+#include "Driver/Uart/Uart.h"
+#include <util/delay.h>
+
 //#define CoreScheduler_EmptyQueueResetType	0
 //#define CoreScheduler_EmptyJobsResetType	1
 //#define CoreScheduler_EmptyQueueResetType	2
 
 //Can Mix Those Option
 //#define CoreScheduler_PauseAll				0x00
-//#define CoreScheduler_PauseCheckWork		0x02
+//#define CoreScheduler_PauseCheckWork			0x02
 //#define CoreScheduler_PausePushWork			0x04
 
-/** @struct CoreScheduler_JobLookUpTableType 
- *  定義查表 Index 型別
- */ 
-/*struct CoreScheduler_JobLookUpTableType{
-	Data_1Byte start;
-	Data_1Byte number;
+#if CoreScheduler_Level > 1
+static const Data_2Byte	CoreScheduler_JobLookUpTableNodeStart[] PROGMEM = {
+	0,		0,		1,		0,		2,		176,	1,		0,
+	3,		256,	97,		96,		2,		176,	1,		0,
+	4,		292,	141,	140,	54,		220,	53,		52,
+	3,		256,	97,		96,		2,		176,	1,		0,
+	5,		308,	161,	160,	78,		240,	77,		76,
+	31,		276,	121,	120,	30,		200,	29,		28,
+	4,		292,	141,	140,	54,		220,	53,		52,
+	3,		256,	97,		96,		2,		176,	1,		0,
+	6,		315,	170,	169,	89,		249,	88,		87,
+	44,		285,	132,	131,	43,		211,	42,		41,
+	19,		301,	152,	151,	67,		231,	66,		65,
+	18,		267,	110,	109,	17,		189,	16,		15,
+	5,		308,	161,	160,	78,		240,	77,		76,
+	31,		276,	121,	120,	30,		200,	29,		28,
+	4,		292,	141,	140,	54,		220,	53,		52,
+	3,		256,	97,		96,		2,		176,	1,		0,
+	7,		7,		174,	7,		94,		94,		93,		7,
+	50,		50,		137,	50,		49,		49,		48,		7,
+	26,		26,		157,	26,		73,		73,		72,		26,
+	25,		25,		116,	25,		24,		24,		23,		7,
+	13,		13,		166,	13,		84,		84,		83,		13,
+	38,		38,		127,	38,		37,		37,		36,		13,
+	12,		12,		147,	12,		61,		61,		60,		12,
+	11,		11,		104,	11,		10,		10,		9,		7,
+	6,		6,		170,	6,		89,		89,		88,		6,
+	44,		44,		132,	44,		43,		43,		42,		6,
+	19,		19,		152,	19,		67,		67,		66,		19,
+	18,		18,		110,	18,		17,		17,		16,		6,
+	5,		5,		161,	5,		78,		78,		77,		5,
+	31,		31,		121,	31,		30,		30,		29,		5,
+	4,		4,		141,	4,		54,		54,		53,		4,
+	3,		3,		97,		3,		2,		2,		1,		0
 };
-typedef struct CoreScheduler_JobLookUpTableType CoreScheduler_JobLookUpTableType;
 
-static const CoreScheduler_JobLookUpTableType	CoreScheduler_JobLookUpTable[] = {
-	{0, 0}, {0, 1}, {1, 1}, {0, 2},
-	{2, 1}, {4, 2}, {1, 2}, {0, 3},
-	{3, 1}, {10, 2}, {8, 2}, {7, 3},
-	{2, 2}, {4, 3}, {1, 3}, {0, 4}
-};*/
+static const Data_1Byte	CoreScheduler_JobLookUpTableNodeNumber[] PROGMEM = {
+	0,	1,	1,	2,	1,	2,	2,	3,
+	1,	2,	2,	3,	2,	3,	3,	4,
+	1,	2,	2,	3,	2,	3,	3,	4,
+	2,	3,	3,	4,	3,	4,	4,	5,
+	1,	2,	2,	3,	2,	3,	3,	4,
+	2,	3,	3,	4,	3,	4,	4,	5,
+	2,	3,	3,	4,	3,	4,	4,	5,
+	3,	4,	4,	5,	4,	5,	5,	6,
+	1,	2,	2,	3,	2,	3,	3,	4,
+	2,	3,	3,	4,	3,	4,	4,	5,
+	2,	3,	3,	4,	3,	4,	4,	5,
+	3,	4,	4,	5,	4,	5,	5,	6,
+	2,	3,	3,	4,	3,	4,	4,	5,
+	3,	4,	4,	5,	4,	5,	5,	6,
+	3,	4,	4,	5,	4,	5,	5,	6,
+	4,	5,	5,	6,	5,	6,	6,	7,
+	1,	2,	2,	3,	2,	3,	3,	4,
+	2,	3,	3,	4,	3,	4,	4,	5,
+	2,	3,	3,	4,	3,	4,	4,	5,
+	3,	4,	4,	5,	4,	5,	5,	6,
+	2,	3,	3,	4,	3,	4,	4,	5,
+	3,	4,	4,	5,	4,	5,	5,	6,
+	3,	4,	4,	5,	4,	5,	5,	6,
+	4,	5,	5,	6,	5,	6,	6,	7,
+	2,	3,	3,	4,	3,	4,	4,	5,
+	3,	4,	4,	5,	4,	5,	5,	6,
+	3,	4,	4,	5,	4,	5,	5,	6,
+	4,	5,	5,	6,	5,	6,	6,	7,
+	3,	4,	4,	5,	4,	5,	5,	6,
+	4,	5,	5,	6,	5,	6,	6,	7,
+	4,	5,	5,	6,	5,	6,	6,	7,
+	5,	6,	6,	7,	6,	7,	7,	8
+};
 
-static const Data_2Byte	CoreScheduler_JobLookUpTableStart[] PROGMEM = {
+static const CoreScheduler_JobID	CoreScheduler_JobPermutationAndCombinationNode[] PROGMEM = {
+	0, 1, 2, 3, 4, 5, 6, 7, 0, 1, 2, 3, 4, 5, 7, 0, 
+	1, 2, 3, 4, 6, 7, 0, 1, 2, 3, 4, 7, 0, 1, 2, 3, 
+	5, 6, 7, 0, 1, 2, 3, 5, 7, 0, 1, 2, 3, 6, 7, 0, 
+	1, 2, 3, 7, 0, 1, 2, 4, 5, 6, 7, 0, 1, 2, 4, 5, 
+	7, 0, 1, 2, 4, 6, 7, 0, 1, 2, 4, 7, 0, 1, 2, 5, 
+	6, 7, 0, 1, 2, 5, 7, 0, 1, 2, 6, 7, 0, 1, 2, 7, 
+	0, 1, 3, 4, 5, 6, 7, 0, 1, 3, 4, 5, 7, 0, 1, 3, 
+	4, 6, 7, 0, 1, 3, 4, 7, 0, 1, 3, 5, 6, 7, 0, 1, 
+	3, 5, 7, 0, 1, 3, 6, 7, 0, 1, 3, 7, 0, 1, 4, 5, 
+	6, 7, 0, 1, 4, 5, 7, 0, 1, 4, 6, 7, 0, 1, 4, 7, 
+	0, 1, 5, 6, 7, 0, 1, 5, 7, 0, 1, 6, 7, 0, 1, 7, 
+	0, 2, 3, 4, 5, 6, 7, 0, 2, 3, 4, 5, 7, 0, 2, 3, 
+	4, 6, 7, 0, 2, 3, 4, 7, 0, 2, 3, 5, 6, 7, 0, 2, 
+	3, 5, 7, 0, 2, 3, 6, 7, 0, 2, 3, 7, 0, 2, 4, 5, 
+	6, 7, 0, 2, 4, 5, 7, 0, 2, 4, 6, 7, 0, 2, 4, 7, 
+	0, 2, 5, 6, 7, 0, 2, 5, 7, 0, 2, 6, 7, 0, 2, 7, 
+	0, 3, 4, 5, 6, 7, 0, 3, 4, 5, 7, 0, 3, 4, 6, 7, 
+	0, 3, 4, 7, 0, 3, 5, 6, 7, 0, 3, 5, 7, 0, 3, 6, 
+	7, 0, 3, 7, 0, 4, 5, 6, 7, 0, 4, 5, 7, 0, 4, 6, 
+	7, 0, 4, 7, 0, 5, 6, 7, 0, 5, 7, 0, 6, 7, 0, 7
+};
+#endif
+
+static const Data_1Byte	CoreScheduler_JobLookUpTableLeafStart[] PROGMEM = {
 	0, 0, 1, 0, 2, 4, 1, 0, 3, 10, 8, 7, 2, 4, 1, 0
 };
 
-static const Data_1Byte	CoreScheduler_JobLookUpTableNumber[] PROGMEM = {
+static const Data_1Byte	CoreScheduler_JobLookUpTableLeafNumber[] PROGMEM = {
 	0, 1, 1, 2, 1, 2, 2, 3, 1, 2, 2, 3, 2, 3, 3, 4
 };
 
-static const CoreScheduler_JobID	CoreScheduler_JobPermutationAndCombination[] PROGMEM = {
+static const CoreScheduler_JobID	CoreScheduler_JobPermutationAndCombinationLeaf[] PROGMEM = {
 	0, 1, 2, 3, 0, 2, 3, 0, 1, 3, 0, 3
 };
 
@@ -79,9 +162,17 @@ struct CoreScheduler_JobTreeLeafType {
 };
 typedef struct CoreScheduler_JobTreeLeafType CoreScheduler_JobTreeLeafType;
 
-CoreScheduler_JobTreeNodeType	*CoreScheduler_JobTreeNode[CoreScheduler_Level - 1];
+//CoreScheduler_JobTreeNodeType	*CoreScheduler_JobTreeNode[CoreScheduler_Level - 1];
 
-///包含四個工作的末枝節點，共會有 Level^4 個
+///包含八個子群組的中間節點
+#if CoreScheduler_Level > 1
+CoreScheduler_JobTreeNodeType	CoreScheduler_JobTreeNodeLevel1;
+#endif
+#if CoreScheduler_Level > 2
+CoreScheduler_JobTreeNodeType	CoreScheduler_JobTreeNodeLevel2[8];
+#endif
+
+///包含四個工作的末枝節點，共會有 4 * 8^(Level-1) 個
 CoreScheduler_JobTreeLeafType	CoreScheduler_JobTreeLeaf[CoreScheduler_JobTreeLeafQuantity];
 
 ///代表外部模組目前可以改變的狀態旗標
@@ -92,8 +183,12 @@ Data_1Byte	CoreScheduler_CurrentCollectBuffer;
 void	CoreScheduler_Init(void);
 void	CoreScheduler_RegisterJob(CoreScheduler_JobID id, void (*function)(void));
 void	CoreScheduler_NeedToWork(CoreScheduler_JobID id);
+
+#if defined(CoreScheduler_CheckRetrig)
 void	CoreScheduler_AllowRetrigger(CoreScheduler_JobID id, Data_Boolean enable);
 //Default is all allow Retrigger
+#endif
+
 void	CoreScheduler_RunLoop(void);
 void	CoreScheduler_Execute(void);
 void	CoreScheduler_CheckAndPush(void);
