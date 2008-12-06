@@ -2,14 +2,14 @@
 
 //Check!!!
 void CoreScheduler_Init(void){
-	Data_2Byte i, j;
+	Data_1Byte i, j;
 	
 	//Initialize Core Scheduler State
 	CoreScheduler_QueueInit();
 	CoreScheduler_CurrentCollectBuffer = 0;
 	
 	//Initialize Job Tree Leaf State
-	for (i = 0; i < CoreScheduler_JobCapability; i++ ){
+	for (i = 0; i < CoreScheduler_JobTreeLeafQuantity; i++ ){
 #if defined(CoreScheduler_CheckRetrig)
 		CoreScheduler_JobTreeLeaf[i].jobAllowRetrigMask = 0xFF;
 #endif
@@ -24,7 +24,6 @@ void CoreScheduler_Init(void){
 #endif
 		}
 	}
-	
 	//Construct & Initialize Job Tree Node
 	for(i = 0; i < 2; i++ ){
 #if CoreScheduler_Level > 1
@@ -51,7 +50,6 @@ void CoreScheduler_NeedToWork(CoreScheduler_JobID id){
 	CoreScheduler_JobTreeLeaf[id >> 2].jobTrigTimes[id & 0x03][CoreScheduler_CurrentCollectBuffer]++;
 #else
 	CoreScheduler_JobTreeLeaf[id >> 2].jobStatus[CoreScheduler_CurrentCollectBuffer] |= (1 << (id & 0x03));
-	Data_1Byte i;
 #endif
 
 //Set parent node
@@ -59,7 +57,7 @@ void CoreScheduler_NeedToWork(CoreScheduler_JobID id){
 	id = id >> 2;
 #endif
 #if CoreScheduler_Level > 2
-	CoreScheduler_JobTreeNodeLevel2[id >> 3].childStatus[CoreScheduler_CurrentCollectBuffer] |= (1 << (id & 0x03));
+	CoreScheduler_JobTreeNodeLevel2[id >> 3].childStatus[CoreScheduler_CurrentCollectBuffer] |= (1 << (id & 0x07));
 	id = id >> 3;
 #endif
 #if CoreScheduler_Level > 1
@@ -100,9 +98,36 @@ void CoreScheduler_Execute(void){
 	}
 }
 
+INLINE void ExecuteLeaf(Data_1Byte jobTreeLeafIndex){
+	Data_1Byte j;
+	Data_1Byte jobStatusLeaf = CoreScheduler_JobTreeLeaf[jobTreeLeafIndex].jobStatus[CoreScheduler_CurrentCheckBuffer];
+	Data_1Byte jobStatusLeafStart = pgm_read_byte(&(CoreScheduler_JobLookUpTableLeafStart[jobStatusLeaf & 0x0F]));
+	Data_1Byte jobStatusLeafEnd = jobStatusLeafStart + pgm_read_byte(&(CoreScheduler_JobLookUpTableLeafNumber[jobStatusLeaf & 0x0F]));
+#if defined(CoreScheduler_CheckRetrig)
+	Data_2Byte k;
+	jobStatusLeaf &= CoreScheduler_JobTreeLeaf[jobTreeLeafIndex].jobAllowRetrigMask;
+	for(j = jobStatusLeafStart; j < jobStatusLeafEnd; j++){
+		if((0x10 << pgm_read_byte(&(CoreScheduler_JobPermutationAndCombinationLeaf[j]))) & jobStatusLeaf){
+			for(k = 0; k < CoreScheduler_JobTreeLeaf[jobTreeLeafIndex].jobTrigTimes[pgm_read_byte(&(CoreScheduler_JobPermutationAndCombinationLeaf[j]))][CoreScheduler_CurrentCheckBuffer]; k++ ){
+				CoreScheduler_QueuePush(CoreScheduler_JobTreeLeaf[jobTreeLeafIndex].jobExecuteFunction[pgm_read_byte(&(CoreScheduler_JobPermutationAndCombinationLeaf[j]))]);
+			}
+		}
+		else{
+			CoreScheduler_QueuePush(CoreScheduler_JobTreeLeaf[jobTreeLeafIndex].jobExecuteFunction[pgm_read_byte(&(CoreScheduler_JobPermutationAndCombinationLeaf[j]))]);
+		}
+		CoreScheduler_JobTreeLeaf[jobTreeLeafIndex].jobTrigTimes[pgm_read_byte(&(CoreScheduler_JobPermutationAndCombinationLeaf[j]))][CoreScheduler_CurrentCheckBuffer] = 0;
+	}
+#else //For defined(CoreScheduler_CheckRetrig)
+	for(j = jobStatusLeafStart; j < jobStatusLeafEnd; j++){
+		CoreScheduler_QueuePush(CoreScheduler_JobTreeLeaf[jobTreeLeafIndex].jobExecuteFunction[pgm_read_byte(&(CoreScheduler_JobPermutationAndCombinationLeaf[j]))]);
+	}
+#endif //For defined(CoreScheduler_CheckRetrig)
+	CoreScheduler_JobTreeLeaf[jobTreeLeafIndex].jobStatus[CoreScheduler_CurrentCheckBuffer] = 0;
+}
+
 //STILL NOT FINISHED !!!
 void CoreScheduler_CheckAndPush(void){
-	Data_1Byte CoreScheduler_CurrentCheckBuffer = CoreScheduler_CurrentCollectBuffer;
+	CoreScheduler_CurrentCheckBuffer = CoreScheduler_CurrentCollectBuffer;
 	
 	cli();	//Disable Interrupt
 	//AVR interrupt triggered by set the interrupt flag, so that event occur during Disable Interrupt time will trig after Enable Interrupt
@@ -116,64 +141,25 @@ void CoreScheduler_CheckAndPush(void){
 	Data_2Byte jobStatusLevel1Start = pgm_read_dword(&(CoreScheduler_JobLookUpTableNodeStart[jobStatusNode]));
 	Data_2Byte jobStatusLevel1End = jobStatusLevel1Start + pgm_read_byte(&(CoreScheduler_JobLookUpTableNodeNumber[jobStatusNode]));
 	for(i = jobStatusLevel1Start; i < jobStatusLevel1End; i++ ){
-
+#if CoreScheduler_Level > 2
 //INSERT LEVEL 2 HERE!!!
 //Still NOT Finish!!!
-		
-		Data_1Byte j;
-		Data_1Byte jobTreeLeafIndex = pgm_read_byte(&(CoreScheduler_JobPermutationAndCombinationNode[i]));
-		Data_1Byte jobStatusLeaf = CoreScheduler_JobTreeLeaf[jobTreeLeafIndex].jobStatus[CoreScheduler_CurrentCheckBuffer];
-		Data_1Byte jobStatusLeafStart = pgm_read_byte(&(CoreScheduler_JobLookUpTableLeafStart[jobStatusLeaf & 0x0F]));
-		Data_1Byte jobStatusLeafEnd = jobStatusLeafStart + pgm_read_byte(&(CoreScheduler_JobLookUpTableLeafNumber[jobStatusLeaf & 0x0F]));
-#if defined(CoreScheduler_CheckRetrig)
-		Data_2Byte k;
-		jobStatusLeaf &= CoreScheduler_JobTreeLeaf[jobTreeLeafIndex].jobAllowRetrigMask;
-		for(j = jobStatusLeafStart; j < jobStatusLeafEnd; j++){
-			if((0x10 << pgm_read_byte(&(CoreScheduler_JobPermutationAndCombinationLeaf[j]))) & jobStatusLeaf){
-				for(k = 0; k < CoreScheduler_JobTreeLeaf[jobTreeLeafIndex].jobTrigTimes[pgm_read_byte(&(CoreScheduler_JobPermutationAndCombinationLeaf[j]))][CoreScheduler_CurrentCheckBuffer]; k++ ){
-					CoreScheduler_QueuePush(CoreScheduler_JobTreeLeaf[jobTreeLeafIndex].jobExecuteFunction[pgm_read_byte(&(CoreScheduler_JobPermutationAndCombinationLeaf[j]))]);
-				}
-			}
-			else{
-				CoreScheduler_QueuePush(CoreScheduler_JobTreeLeaf[jobTreeLeafIndex].jobExecuteFunction[pgm_read_byte(&(CoreScheduler_JobPermutationAndCombinationLeaf[j]))]);
-			}
-			CoreScheduler_JobTreeLeaf[jobTreeLeafIndex].jobTrigTimes[pgm_read_byte(&(CoreScheduler_JobPermutationAndCombinationLeaf[j]))][CoreScheduler_CurrentCheckBuffer] = 0;
+		Data_2Byte j;
+		Data_1Byte jobStatusNode = CoreScheduler_JobTreeNodeLevel2[i].childStatus[CoreScheduler_CurrentCheckBuffer];
+		Data_2Byte jobStatusLevel2Start = pgm_read_dword(&(CoreScheduler_JobLookUpTableNodeStart[jobStatusNode]));
+		Data_2Byte jobStatusLevel2End = jobStatusLevel2Start + pgm_read_byte(&(CoreScheduler_JobLookUpTableNodeNumber[jobStatusNode]));
+		for(j = jobStatusLevel2Start; j < jobStatusLevel2End; j++ ){
+			ExecuteLeaf(pgm_read_byte(&(CoreScheduler_JobPermutationAndCombinationNode[j])));
 		}
+		CoreScheduler_JobTreeNodeLevel2[i].childStatus[CoreScheduler_CurrentCheckBuffer] = 0;
 #else
-		for(j = jobStatusLeafStart; j < jobStatusLeafEnd; j++){
-			CoreScheduler_QueuePush(CoreScheduler_JobTreeLeaf[jobTreeLeafIndex].jobExecuteFunction[pgm_read_byte(&(CoreScheduler_JobPermutationAndCombinationLeaf[j]))]);
-		}
+		ExecuteLeaf(pgm_read_byte(&(CoreScheduler_JobPermutationAndCombinationNode[i])));
 #endif
-		CoreScheduler_JobTreeLeaf[jobTreeLeafIndex].jobStatus[CoreScheduler_CurrentCheckBuffer] = 0;
 	}
 	CoreScheduler_JobTreeNodeLevel1.childStatus[CoreScheduler_CurrentCheckBuffer] = 0;
-#else
-	Data_1Byte i;
-	Data_1Byte jobStatusLeaf = CoreScheduler_JobTreeLeaf[0].jobStatus[CoreScheduler_CurrentCheckBuffer];
-	Data_1Byte jobStatusLeafStart = pgm_read_byte(&(CoreScheduler_JobLookUpTableLeafStart[jobStatusLeaf & 0x0F]));
-	Data_1Byte jobStatusLeafEnd = jobStatusLeafStart + pgm_read_byte(&(CoreScheduler_JobLookUpTableLeafNumber[jobStatusLeaf & 0x0F]));
-#if defined(CoreScheduler_CheckRetrig)
-	Data_2Byte j;
-	jobStatusLeaf &= CoreScheduler_JobTreeLeaf[0].jobAllowRetrigMask;
-	for(i = jobStatusLeafStart; i < jobStatusLeafEnd; i++){
-		if((0x10 << pgm_read_byte(&(CoreScheduler_JobPermutationAndCombinationLeaf[i]))) & jobStatusLeaf){
-			for(j = 0; j < CoreScheduler_JobTreeLeaf[0].jobTrigTimes[pgm_read_byte(&(CoreScheduler_JobPermutationAndCombinationLeaf[i]))][CoreScheduler_CurrentCheckBuffer]; j++ ){
-				CoreScheduler_QueuePush(CoreScheduler_JobTreeLeaf[0].jobExecuteFunction[pgm_read_byte(&(CoreScheduler_JobPermutationAndCombinationLeaf[i]))]);
-			}
-		}
-		else{
-			CoreScheduler_QueuePush(CoreScheduler_JobTreeLeaf[0].jobExecuteFunction[pgm_read_byte(&(CoreScheduler_JobPermutationAndCombinationLeaf[i]))]);
-		}
-		CoreScheduler_JobTreeLeaf[0].jobTrigTimes[pgm_read_byte(&(CoreScheduler_JobPermutationAndCombinationLeaf[i]))][CoreScheduler_CurrentCheckBuffer] = 0;
-	}
-#else
-	for(i = jobStatusLeafStart; i < jobStatusLeafEnd; i++){
-		CoreScheduler_QueuePush(CoreScheduler_JobTreeLeaf[0].jobExecuteFunction[pgm_read_byte(&(CoreScheduler_JobPermutationAndCombinationLeaf[i]))]);
-	}
-#endif
-	CoreScheduler_JobTreeLeaf[0].jobStatus[CoreScheduler_CurrentCheckBuffer] = 0;
-#endif
-
+#else //For CoreScheduler_Level > 1
+	ExecuteLeaf(0);
+#endif //For CoreScheduler_Level > 1
 }
 
 //void	CoreScheduler_Pause(Data_1Byte type);

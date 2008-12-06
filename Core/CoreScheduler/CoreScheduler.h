@@ -22,6 +22,14 @@
 #include "Driver/Uart/Uart.h"
 #include <util/delay.h>
 
+#ifndef INLINE
+# if __GNUC__
+#  define INLINE extern inline
+# else
+#  define INLINE inline
+# endif
+#endif
+
 //#define CoreScheduler_EmptyQueueResetType	0
 //#define CoreScheduler_EmptyJobsResetType	1
 //#define CoreScheduler_EmptyQueueResetType	2
@@ -177,6 +185,7 @@ CoreScheduler_JobTreeLeafType	CoreScheduler_JobTreeLeaf[CoreScheduler_JobTreeLea
 
 ///代表外部模組目前可以改變的狀態旗標
 Data_1Byte	CoreScheduler_CurrentCollectBuffer;
+Data_1Byte	CoreScheduler_CurrentCheckBuffer;
 
 //Data_1Byte	CoreScheduler_PauseState;
 
@@ -188,7 +197,7 @@ void	CoreScheduler_NeedToWork(CoreScheduler_JobID id);
 void	CoreScheduler_AllowRetrigger(CoreScheduler_JobID id, Data_Boolean enable);
 //Default is all allow Retrigger
 #endif
-
+INLINE void ExecuteLeaf(Data_1Byte);
 void	CoreScheduler_RunLoop(void);
 void	CoreScheduler_Execute(void);
 void	CoreScheduler_CheckAndPush(void);

@@ -1,0 +1,4 @@
+2008.12.05
+1.實做 CoreDebugTool
+2.將 CoreScheduler 中使用的中斷禁能函數『軟體化』（實做出底層 Porting 層）
+3.CoreScheduler Level 3
