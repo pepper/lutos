@@ -40,8 +40,8 @@
 
 
 # MCU name
-#MCU = atmega128
-MCU = at90can128
+MCU = atmega128
+#MCU = at90can128
 
 # Processor frequency.
 #     This will define a symbol, F_CPU, in all source code files equal to the 
@@ -64,6 +64,8 @@ SRC += Driver/Uart/Uart.c
 SRC += Core/CoreScheduler/CoreScheduler.c Core/CoreScheduler/CoreSchedulerQueue.c
 SRC += Core/CoreMemory/CoreMemory.c
 SRC += Core/CoreBasicFunctionAndVariable/CoreBasicFunctionAndVariable.c
+SRC += Core/CoreDebuger/CoreDebuger.c
+SRC += Core/CoreRecorder/CoreRecorder.c
 
 # List Assembler source files here.
 #     Make them always end in a capital .S.  Files ending in a lowercase .s
@@ -266,7 +268,7 @@ DEBUG_HOST = localhost
 
 # Define programs and commands.
 SHELL = sh
-CC = avr-gcc
+CC = avr-gcc -g
 OBJCOPY = avr-objcopy
 OBJDUMP = avr-objdump
 SIZE = avr-size
