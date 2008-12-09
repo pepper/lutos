@@ -8,4 +8,12 @@
 #define	GetBit(data,bit)	((data & (1 << bit)) >> bit)
 #define	SwapBit(data,bit)	((GetBit(data,bit))?ClearBit(data,bit):SetBit(data,bit))
 
+#ifndef INLINE
+# if __GNUC__
+#  define INLINE extern inline
+# else
+#  define INLINE inline
+# endif
+#endif
+
 #endif

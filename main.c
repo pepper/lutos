@@ -41,7 +41,6 @@ int main(void ){
 	DDRE = 0xFF;
 	DDRD = 0xFF;
 	PORTD = 0xFF;
-	Data_1Byte i;
 	
 	Uart_Init();
 	CoreScheduler_Init();
@@ -57,8 +56,9 @@ int main(void ){
 	CoreScheduler_RegisterJob(jobIndex[9], Function9);
 	
 #if defined(CoreScheduler_CheckRetrig)
+	Data_1Byte i;
 	for(i = 0; i < 10; i++) CoreScheduler_AllowRetrigger(jobIndex[i], (i % 2 == 0)?TRUE:FALSE);
-#endif	
+#endif
 	
 	Uart_Uart1RXCompleteInterruptFunction = CommandIn;
 	CoreScheduler_RunLoop();

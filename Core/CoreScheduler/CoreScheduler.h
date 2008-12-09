@@ -22,14 +22,6 @@
 #include "Driver/Uart/Uart.h"
 #include <util/delay.h>
 
-#ifndef INLINE
-# if __GNUC__
-#  define INLINE extern inline
-# else
-#  define INLINE inline
-# endif
-#endif
-
 //#define CoreScheduler_EmptyQueueResetType	0
 //#define CoreScheduler_EmptyJobsResetType	1
 //#define CoreScheduler_EmptyQueueResetType	2

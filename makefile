@@ -40,8 +40,8 @@
 
 
 # MCU name
-MCU = atmega128
-#MCU = at90can128
+#MCU = atmega128
+MCU = at90can128
 
 # Processor frequency.
 #     This will define a symbol, F_CPU, in all source code files equal to the 
@@ -268,7 +268,7 @@ DEBUG_HOST = localhost
 
 # Define programs and commands.
 SHELL = sh
-CC = avr-gcc -g
+CC = avr-gcc
 OBJCOPY = avr-objcopy
 OBJDUMP = avr-objdump
 SIZE = avr-size
