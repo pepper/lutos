@@ -5,7 +5,7 @@
 
 //A Big Bug When ID > 32 It Will NOT Triger
 Data_1Byte jobIndex[10] = {
-	0,7,9,12,15,19,21,28,30,33
+	0,7,9,12,15,19,32,33,64,65
 };
 
 void CommandIn(Data_1Byte input){

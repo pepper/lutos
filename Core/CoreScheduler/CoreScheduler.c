@@ -98,12 +98,11 @@ void CoreScheduler_Execute(void){
 	}
 }
 
-INLINE void ExecuteLeaf(Data_1Byte jobTreeLeafIndex){
+INLINE void CoreScheduler_CheckAndPushLeaf(Data_1Byte jobTreeLeafIndex){
 	Data_1Byte j;
 	Data_1Byte jobStatusLeaf = CoreScheduler_JobTreeLeaf[jobTreeLeafIndex].jobStatus[CoreScheduler_CurrentCheckBuffer];
 	Data_1Byte jobStatusLeafStart = pgm_read_byte(&(CoreScheduler_JobLookUpTableLeafStart[jobStatusLeaf & 0x0F]));
 	Data_1Byte jobStatusLeafEnd = jobStatusLeafStart + pgm_read_byte(&(CoreScheduler_JobLookUpTableLeafNumber[jobStatusLeaf & 0x0F]));
-	
 #if defined(CoreScheduler_CheckRetrig)
 	Data_2Byte k;
 	jobStatusLeaf &= CoreScheduler_JobTreeLeaf[jobTreeLeafIndex].jobAllowRetrigMask;
@@ -143,23 +142,22 @@ void CoreScheduler_CheckAndPush(void){
 	Data_2Byte jobStatusLevel1End = jobStatusLevel1Start + pgm_read_byte(&(CoreScheduler_JobLookUpTableNodeNumber[jobStatusNode]));
 	for(i = jobStatusLevel1Start; i < jobStatusLevel1End; i++ ){
 #if CoreScheduler_Level > 2
-//INSERT LEVEL 2 HERE!!!
-//Still NOT Finish!!!
 		Data_2Byte j;
 		Data_1Byte jobStatusNode = CoreScheduler_JobTreeNodeLevel2[i].childStatus[CoreScheduler_CurrentCheckBuffer];
 		Data_2Byte jobStatusLevel2Start = pgm_read_dword(&(CoreScheduler_JobLookUpTableNodeStart[jobStatusNode]));
 		Data_2Byte jobStatusLevel2End = jobStatusLevel2Start + pgm_read_byte(&(CoreScheduler_JobLookUpTableNodeNumber[jobStatusNode]));
+		Data_1Byte baseNode = i << 3;
 		for(j = jobStatusLevel2Start; j < jobStatusLevel2End; j++ ){
-			ExecuteLeaf(pgm_read_byte(&(CoreScheduler_JobPermutationAndCombinationNode[j])));
+			CoreScheduler_CheckAndPushLeaf((pgm_read_byte(&(CoreScheduler_JobPermutationAndCombinationNode[j]))) + baseNode);
 		}
 		CoreScheduler_JobTreeNodeLevel2[i].childStatus[CoreScheduler_CurrentCheckBuffer] = 0;
 #else
-		ExecuteLeaf(pgm_read_byte(&(CoreScheduler_JobPermutationAndCombinationNode[i])));
+		CoreScheduler_CheckAndPushLeaf(pgm_read_byte(&(CoreScheduler_JobPermutationAndCombinationNode[i])));
 #endif
 	}
 	CoreScheduler_JobTreeNodeLevel1.childStatus[CoreScheduler_CurrentCheckBuffer] = 0;
 #else //For CoreScheduler_Level > 1
-	ExecuteLeaf(0);
+	CoreScheduler_CheckAndPushLeaf(0);
 #endif //For CoreScheduler_Level > 1
 }
 

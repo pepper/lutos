@@ -189,10 +189,10 @@ void	CoreScheduler_NeedToWork(CoreScheduler_JobID id);
 void	CoreScheduler_AllowRetrigger(CoreScheduler_JobID id, Data_Boolean enable);
 //Default is all allow Retrigger
 #endif
-INLINE void ExecuteLeaf(Data_1Byte);
 void	CoreScheduler_RunLoop(void);
 void	CoreScheduler_Execute(void);
 void	CoreScheduler_CheckAndPush(void);
+INLINE	void	CoreScheduler_CheckAndPushLeaf(Data_1Byte);
 void	CoreScheduler_Pause(Data_1Byte type);
 void	CoreScheduler_Reset(Data_1Byte type);
 void	CoreScheduler_NothingToDo(void);
