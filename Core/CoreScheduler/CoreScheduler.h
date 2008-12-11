@@ -18,18 +18,8 @@
 #include "CoreScheduler.config"
 #include "CoreSchedulerQueue.h"
 
-
-#include "Driver/Uart/Uart.h"
-#include <util/delay.h>
-
-//#define CoreScheduler_EmptyQueueResetType	0
-//#define CoreScheduler_EmptyJobsResetType	1
-//#define CoreScheduler_EmptyQueueResetType	2
-
-//Can Mix Those Option
-//#define CoreScheduler_PauseAll				0x00
-//#define CoreScheduler_PauseCheckWork			0x02
-//#define CoreScheduler_PausePushWork			0x04
+#define CoreScheduler_QueueResetType	1
+#define CoreScheduler_JobsResetType		2
 
 #if CoreScheduler_Level > 1
 static const Data_2Byte	CoreScheduler_JobLookUpTableNodeStart[] PROGMEM = {
@@ -143,8 +133,6 @@ static const CoreScheduler_JobID	CoreScheduler_JobPermutationAndCombinationLeaf[
  */ 
 struct CoreScheduler_JobTreeNodeType {
 	Data_1Byte								childStatus[2];	///< 代表此 Node 底下的 Child Node 是否有工作被觸發
-	//struct CoreScheduler_JobTreeNodeType	*parent;		///< 上層元素（觸發事件時回追設定用）
-	//void									*child[4];		///< 子元素（可以指向『節點』或『末枝節點』，由執行期定義）
 };
 typedef struct CoreScheduler_JobTreeNodeType CoreScheduler_JobTreeNodeType;
 
@@ -152,9 +140,8 @@ typedef struct CoreScheduler_JobTreeNodeType CoreScheduler_JobTreeNodeType;
  *  定義樹狀工作狀態表的末枝節點，單一節點可指向4個工作。
  */ 
 struct CoreScheduler_JobTreeLeafType {
-	//struct CoreScheduler_JobTreeNodeType	*parent;							///< 上層元素（觸發事件時回追設定用）
 	Data_1Byte								jobStatus[2];						///< 代表此節點指向的四個工作的觸發狀態（Most 4-Bit 代表重複觸發、Last 4-Bit 代表觸發狀態）
-#if defined(CoreScheduler_CheckRetrig)
+#if defined(CoreScheduler_EnableCheckRetrig)
 	Data_1Byte								jobAllowRetrigMask;					///< 設定指向的工作是否允許重複觸發（預設為允許觸發）
 	Data_1Byte								jobTrigTimes[4][2];					///< 距上次檢查後被觸發的次數，若允許重複觸發就會 Push N 次至 Job Queue 中
 #endif
@@ -179,21 +166,28 @@ CoreScheduler_JobTreeLeafType	CoreScheduler_JobTreeLeaf[CoreScheduler_JobTreeLea
 Data_1Byte	CoreScheduler_CurrentCollectBuffer;
 Data_1Byte	CoreScheduler_CurrentCheckBuffer;
 
-//Data_1Byte	CoreScheduler_PauseState;
+#if defined(CoreScheduler_EnablePauseExecuteJob)
+Data_Boolean	CoreScheduler_PauseExecuteJobState;
+#endif
+
+#if defined(CoreScheduler_EnablePausePushJob)
+Data_Boolean	CoreScheduler_PausePushJobState;
+#endif
 
 void	CoreScheduler_Init(void);
 void	CoreScheduler_RegisterJob(CoreScheduler_JobID id, void (*function)(void));
 void	CoreScheduler_NeedToWork(CoreScheduler_JobID id);
 
-#if defined(CoreScheduler_CheckRetrig)
+#if defined(CoreScheduler_EnableCheckRetrig)
 void	CoreScheduler_AllowRetrigger(CoreScheduler_JobID id, Data_Boolean enable);
 //Default is all allow Retrigger
 #endif
+
 void	CoreScheduler_RunLoop(void);
 void	CoreScheduler_Execute(void);
 void	CoreScheduler_CheckAndPush(void);
-INLINE	void	CoreScheduler_CheckAndPushLeaf(Data_1Byte);
 void	CoreScheduler_Pause(Data_1Byte type);
 void	CoreScheduler_Reset(Data_1Byte type);
 void	CoreScheduler_NothingToDo(void);
+
 #endif

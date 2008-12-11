@@ -1,5 +1,7 @@
 #include "CoreScheduler.h"
 
+INLINE void CoreScheduler_CheckAndPushLeaf(Data_1Byte);
+
 //Check!!!
 void CoreScheduler_Init(void){
 	Data_1Byte i, j;
@@ -10,13 +12,13 @@ void CoreScheduler_Init(void){
 	
 	//Initialize Job Tree Leaf State
 	for (i = 0; i < CoreScheduler_JobTreeLeafQuantity; i++ ){
-#if defined(CoreScheduler_CheckRetrig)
+#if defined(CoreScheduler_EnableCheckRetrig)
 		CoreScheduler_JobTreeLeaf[i].jobAllowRetrigMask = 0xFF;
 #endif
 		for (j = 0; j < 2; j++ ) {
 			CoreScheduler_JobTreeLeaf[i].jobStatus[j] = 0;
 			CoreScheduler_RegisterJob(i, CoreScheduler_NothingToDo);
-#if defined(CoreScheduler_CheckRetrig)
+#if defined(CoreScheduler_EnableCheckRetrig)
 			Data_1Byte k;
 			for(k = 0; k < 4; k++ ){
 				CoreScheduler_JobTreeLeaf[i].jobTrigTimes[k][j] = 0;				
@@ -45,7 +47,7 @@ void CoreScheduler_RegisterJob(CoreScheduler_JobID id, void (*function)(void)){
 
 //Check!!!
 void CoreScheduler_NeedToWork(CoreScheduler_JobID id){
-#if defined(CoreScheduler_CheckRetrig)
+#if defined(CoreScheduler_EnableCheckRetrig)
 	CoreScheduler_JobTreeLeaf[id >> 2].jobStatus[CoreScheduler_CurrentCollectBuffer] |= (((CoreScheduler_JobTreeLeaf[id >> 2].jobStatus[CoreScheduler_CurrentCollectBuffer] & (1 << (id & 0x03))) == 0)? (1 << (id & 0x03)):(1 << ((id & 0x03) + 4)));
 	CoreScheduler_JobTreeLeaf[id >> 2].jobTrigTimes[id & 0x03][CoreScheduler_CurrentCollectBuffer]++;
 #else
@@ -66,7 +68,7 @@ void CoreScheduler_NeedToWork(CoreScheduler_JobID id){
 }
 
 //Check!!!
-#if defined(CoreScheduler_CheckRetrig)
+#if defined(CoreScheduler_EnableCheckRetrig)
 void CoreScheduler_AllowRetrigger(CoreScheduler_JobID id, Data_Boolean enable){
 	if(enable == TRUE){
 		SetBit(CoreScheduler_JobTreeLeaf[id >> 2].jobAllowRetrigMask, ((id & 0x03) + 4));
@@ -82,10 +84,14 @@ void CoreScheduler_AllowRetrigger(CoreScheduler_JobID id, Data_Boolean enable){
 void CoreScheduler_RunLoop(void){
 	while(1){
 		//Using to pause
-		while(1){
+#if defined(CoreScheduler_EnablePauseExecuteJob)
+		while(CoreScheduler_PauseExecuteJobState == FALSE){
+#endif
 			CoreScheduler_CheckAndPush();
 			CoreScheduler_Execute();
+#if defined(CoreScheduler_EnablePauseExecuteJob)
 		}
+#endif
 	}
 }
 
@@ -103,7 +109,7 @@ INLINE void CoreScheduler_CheckAndPushLeaf(Data_1Byte jobTreeLeafIndex){
 	Data_1Byte jobStatusLeaf = CoreScheduler_JobTreeLeaf[jobTreeLeafIndex].jobStatus[CoreScheduler_CurrentCheckBuffer];
 	Data_1Byte jobStatusLeafStart = pgm_read_byte(&(CoreScheduler_JobLookUpTableLeafStart[jobStatusLeaf & 0x0F]));
 	Data_1Byte jobStatusLeafEnd = jobStatusLeafStart + pgm_read_byte(&(CoreScheduler_JobLookUpTableLeafNumber[jobStatusLeaf & 0x0F]));
-#if defined(CoreScheduler_CheckRetrig)
+#if defined(CoreScheduler_EnableCheckRetrig)
 	Data_2Byte k;
 	jobStatusLeaf &= CoreScheduler_JobTreeLeaf[jobTreeLeafIndex].jobAllowRetrigMask;
 	for(j = jobStatusLeafStart; j < jobStatusLeafEnd; j++){
@@ -117,16 +123,21 @@ INLINE void CoreScheduler_CheckAndPushLeaf(Data_1Byte jobTreeLeafIndex){
 		}
 		CoreScheduler_JobTreeLeaf[jobTreeLeafIndex].jobTrigTimes[pgm_read_byte(&(CoreScheduler_JobPermutationAndCombinationLeaf[j]))][CoreScheduler_CurrentCheckBuffer] = 0;
 	}
-#else //For defined(CoreScheduler_CheckRetrig)
+#else //For defined(CoreScheduler_EnableCheckRetrig)
 	for(j = jobStatusLeafStart; j < jobStatusLeafEnd; j++){
 		CoreScheduler_QueuePush(CoreScheduler_JobTreeLeaf[jobTreeLeafIndex].jobExecuteFunction[pgm_read_byte(&(CoreScheduler_JobPermutationAndCombinationLeaf[j]))]);
 	}
-#endif //For defined(CoreScheduler_CheckRetrig)
+#endif //For defined(CoreScheduler_EnableCheckRetrig)
 	CoreScheduler_JobTreeLeaf[jobTreeLeafIndex].jobStatus[CoreScheduler_CurrentCheckBuffer] = 0;
 }
 
 //STILL NOT FINISHED !!!
 void CoreScheduler_CheckAndPush(void){
+#if defined(CoreScheduler_EnablePausePushJob)
+	if(CoreScheduler_PausePushJobState){
+		return;
+	}
+#endif
 	CoreScheduler_CurrentCheckBuffer = CoreScheduler_CurrentCollectBuffer;
 	
 	cli();	//Disable Interrupt
@@ -162,8 +173,18 @@ void CoreScheduler_CheckAndPush(void){
 }
 
 //void	CoreScheduler_Pause(Data_1Byte type);
-//void	CoreScheduler_Reset(Data_1Byte type);
+void CoreScheduler_Reset(Data_1Byte type){
+	switch(type){
+		case CoreScheduler_QueueResetType:
+			CoreScheduler_QueueEmpty();
+			break;
+		
+		case CoreScheduler_JobsResetType:
+			CoreScheduler_Init();
+			break;
+	}
+}
 
 void CoreScheduler_NothingToDo(void){
-
+//Report an ERROE occur!!!
 }

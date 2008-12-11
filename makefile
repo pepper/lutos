@@ -66,6 +66,7 @@ SRC += Core/CoreMemory/CoreMemory.c
 SRC += Core/CoreBasicFunctionAndVariable/CoreBasicFunctionAndVariable.c
 SRC += Core/CoreDebuger/CoreDebuger.c
 SRC += Core/CoreRecorder/CoreRecorder.c
+SRC += Core/CoreMonitor/CoreMonitor.c
 
 # List Assembler source files here.
 #     Make them always end in a capital .S.  Files ending in a lowercase .s
