@@ -1,5 +1,5 @@
 #include <util/delay.h>
-#include "Core/CoreBasicTypeDefine.h"
+#include "SystemInformation.h"
 #include "Driver/Uart/Uart.h"
 #include "Core/CoreScheduler/CoreScheduler.h"
 

@@ -1,7 +1,7 @@
 #ifndef	COREBASICFUNCTIONANDVARIABLEble_H
 #define	COREBASICFUNCTIONANDVARIABLEble_H
 
-#include "../CoreBasicTypeDefine.h"
+#include "../../SystemInformation.h"
 
 #define	ClearBit(data,bit)	(data = (data & (~(1 << bit))))
 #define	SetBit(data,bit)	(data = (data | (1 << bit)))

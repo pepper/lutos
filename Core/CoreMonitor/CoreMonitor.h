@@ -7,7 +7,7 @@
 //Remote Command Reading System Memory (Passive)
 //
 
-#include "../CoreBasicTypeDefine.h"
+#include "../../SystemInformation.h"
 #include "CoreMonitor.config"
 
 struct CoreMonitor_WatchingVariableContainer{

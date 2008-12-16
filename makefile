@@ -63,6 +63,7 @@ SRC = $(TARGET).c
 SRC += Driver/Uart/Uart.c
 SRC += Core/CoreScheduler/CoreScheduler.c Core/CoreScheduler/CoreSchedulerQueue.c
 SRC += Core/CoreMemory/CoreMemory.c
+SRC += Core/CoreTimer/CoreTimer.c
 SRC += Core/CoreBasicFunctionAndVariable/CoreBasicFunctionAndVariable.c
 SRC += Core/CoreDebuger/CoreDebuger.c
 SRC += Core/CoreRecorder/CoreRecorder.c

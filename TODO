@@ -1,4 +1,7 @@
+2008.12.16
+1.實做完整Porting概念（包含目前 CoreScheduler 中儲存在 Program Memory 的變數）
+
 2008.12.05
 1.實做 CoreDebugTool
 2.將 CoreScheduler 中使用的中斷禁能函數『軟體化』（實做出底層 Porting 層）
-3.CoreScheduler Level 3
+#3.CoreScheduler Level 3

@@ -1,7 +1,7 @@
 #ifndef CORESCHEDULERQUEUE_H
 #define CORESCHEDULERQUEUE_H
 
-#include "../CoreBasicTypeDefine.h"
+#include "../../SystemInformation.h"
 #include "CoreScheduler.config"
 #include "../CoreMemory/CoreMemory.h"
 

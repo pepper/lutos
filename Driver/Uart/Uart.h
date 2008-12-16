@@ -3,7 +3,6 @@
 
 
 #include "../../SystemInformation.h"
-#include "../../Core/CoreBasicTypeDefine.h"
 #include <avr/io.h>
 #include <avr/interrupt.h>
 

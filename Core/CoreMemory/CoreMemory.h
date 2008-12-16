@@ -5,7 +5,6 @@
 //Must Fix It!!!
 
 #include "../../SystemInformation.h"
-#include "../CoreBasicTypeDefine.h"
 #include "CoreMemory.config"
 
 void*	CoreMemory_Alloc(CoreMemorySize size);

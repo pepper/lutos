@@ -140,11 +140,10 @@ void CoreScheduler_CheckAndPush(void){
 #endif
 	CoreScheduler_CurrentCheckBuffer = CoreScheduler_CurrentCollectBuffer;
 	
-	cli();	//Disable Interrupt
-	//AVR interrupt triggered by set the interrupt flag, so that event occur during Disable Interrupt time will trig after Enable Interrupt
-	//For other CPU make sure to check this point !!!
+	Porting_GlobalInterruptDisable();
+	//Safe Section
 	CoreScheduler_CurrentCollectBuffer = (CoreScheduler_CurrentCollectBuffer + 1) & 0x01;
-	sei();	//Enable Interrupt After 4 CPU Clock
+	Porting_GlobalInterruptEnable();
 	
 #if CoreScheduler_Level > 1
 	Data_2Byte i;

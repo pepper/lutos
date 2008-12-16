@@ -2,7 +2,6 @@
 #define	CORETIMER_H
 
 #include "../../SystemInformation.h"
-#include "../CoreBasicTypeDefine.h"
 #include "../CoreMemory/CoreMemory.h"
 #include "../CoreScheduler/CoreScheduler.h"
 
@@ -25,6 +24,10 @@ Data_1Byte					CoreTimer_FrequencyDividerQuantity;
 
 void	CoreTimer_Init(Data_4Byte baseTimerClock, Data_1Byte frequencyDividerQuantity);
 void	CoreTimer_EnableBaseTimer(Data_Boolean enable);
+void	CoreTimer_FindBaseTimeClock(void);
+
+//User Must Deliver CoreTimer_SetBasicTimerByHz(Data_2Byte hz);
+
 void	CoreTimer_RegisterFrequencyDivider(Data_4Byte divider, CoreScheduler_JobID id);
 void	CoreTimer_EnableFrequencyDivider(Data_Boolean enable);
 

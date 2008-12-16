@@ -12,7 +12,7 @@
 #include <avr/interrupt.h>
 #include <avr/pgmspace.h>
 
-#include "../CoreBasicTypeDefine.h"
+#include "../../SystemInformation.h"
 #include "../CoreBasicFunctionAndVariable/CoreBasicFunctionAndVariable.h"
 #include "../CoreMemory/CoreMemory.h"
 #include "CoreScheduler.config"
