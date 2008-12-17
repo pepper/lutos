@@ -9,9 +9,6 @@
 #ifndef CORESCHEDULER_H
 #define CORESCHEDULER_H
 
-#include <avr/interrupt.h>
-#include <avr/pgmspace.h>
-
 #include "../../SystemInformation.h"
 #include "../CoreBasicFunctionAndVariable/CoreBasicFunctionAndVariable.h"
 #include "../CoreMemory/CoreMemory.h"
@@ -22,7 +19,7 @@
 #define CoreScheduler_JobsResetType		2
 
 #if CoreScheduler_Level > 1
-static const Data_2Byte	CoreScheduler_JobLookUpTableNodeStart[] PROGMEM = {
+static const Data_2Byte Porting_StoreInProgramMemory CoreScheduler_JobLookUpTableNodeStart[] = {
 	0,		0,		1,		0,		2,		176,	1,		0,
 	3,		256,	97,		96,		2,		176,	1,		0,
 	4,		292,	141,	140,	54,		220,	53,		52,
@@ -57,7 +54,7 @@ static const Data_2Byte	CoreScheduler_JobLookUpTableNodeStart[] PROGMEM = {
 	3,		256,	97,		96,		2,		176,	1,		0
 };
 
-static const Data_1Byte	CoreScheduler_JobLookUpTableNodeNumber[] PROGMEM = {
+static const Data_1Byte Porting_StoreInProgramMemory CoreScheduler_JobLookUpTableNodeNumber[] = {
 	0,	1,	1,	2,	1,	2,	2,	3,
 	1,	2,	2,	3,	2,	3,	3,	4,
 	1,	2,	2,	3,	2,	3,	3,	4,
@@ -92,7 +89,7 @@ static const Data_1Byte	CoreScheduler_JobLookUpTableNodeNumber[] PROGMEM = {
 	5,	6,	6,	7,	6,	7,	7,	8
 };
 
-static const CoreScheduler_JobID	CoreScheduler_JobPermutationAndCombinationNode[] PROGMEM = {
+static const CoreScheduler_JobID Porting_StoreInProgramMemory CoreScheduler_JobPermutationAndCombinationNode[] = {
 	0, 1, 2, 3, 4, 5, 6, 7, 0, 1, 2, 3, 4, 5, 7, 0, 
 	1, 2, 3, 4, 6, 7, 0, 1, 2, 3, 4, 7, 0, 1, 2, 3, 
 	5, 6, 7, 0, 1, 2, 3, 5, 7, 0, 1, 2, 3, 6, 7, 0, 
@@ -116,15 +113,15 @@ static const CoreScheduler_JobID	CoreScheduler_JobPermutationAndCombinationNode[
 };
 #endif
 
-static const Data_1Byte	CoreScheduler_JobLookUpTableLeafStart[] PROGMEM = {
+static const Data_1Byte Porting_StoreInProgramMemory CoreScheduler_JobLookUpTableLeafStart[] = {
 	0, 0, 1, 0, 2, 4, 1, 0, 3, 10, 8, 7, 2, 4, 1, 0
 };
 
-static const Data_1Byte	CoreScheduler_JobLookUpTableLeafNumber[] PROGMEM = {
+static const Data_1Byte Porting_StoreInProgramMemory CoreScheduler_JobLookUpTableLeafNumber[] = {
 	0, 1, 1, 2, 1, 2, 2, 3, 1, 2, 2, 3, 2, 3, 3, 4
 };
 
-static const CoreScheduler_JobID	CoreScheduler_JobPermutationAndCombinationLeaf[] PROGMEM = {
+static const CoreScheduler_JobID Porting_StoreInProgramMemory CoreScheduler_JobPermutationAndCombinationLeaf[] = {
 	0, 1, 2, 3, 0, 2, 3, 0, 1, 3, 0, 3
 };
 
@@ -186,7 +183,15 @@ void	CoreScheduler_AllowRetrigger(CoreScheduler_JobID id, Data_Boolean enable);
 void	CoreScheduler_RunLoop(void);
 void	CoreScheduler_Execute(void);
 void	CoreScheduler_CheckAndPush(void);
-void	CoreScheduler_Pause(Data_1Byte type);
+
+#if defined(CoreScheduler_EnablePauseExecuteJob)
+void	CoreScheduler_PauseExecuteJob(Data_Boolean state);
+#endif
+
+#if defined(CoreScheduler_EnablePausePushJob)
+void	CoreScheduler_PausePushJob(Data_Boolean state);
+#endif
+
 void	CoreScheduler_Reset(Data_1Byte type);
 void	CoreScheduler_NothingToDo(void);
 
