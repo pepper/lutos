@@ -1,8 +1,5 @@
 #include "CoreScheduler.h"
 
-#include <util/delay.h>
-#include "Driver/Uart/Uart.h"
-
 INLINE void CoreScheduler_CheckAndPushLeaf(Data_1Byte);
 
 void CoreScheduler_Init(void){
@@ -85,8 +82,6 @@ void CoreScheduler_AllowRetrigger(CoreScheduler_JobID id, Data_Boolean enable){
 	else{
 		ClearBit(CoreScheduler_JobTreeLeaf[id >> 2].jobAllowRetrigMask, ((id & 0x03) + 4));
 	}
-	Uart_Transmit(Uart_Uart1DeviceIdentify, CoreScheduler_JobTreeLeaf[id >> 2].jobAllowRetrigMask);
-	_delay_ms(100.0f);
 }
 #endif
 
@@ -119,15 +114,7 @@ INLINE void CoreScheduler_CheckAndPushLeaf(Data_1Byte jobTreeLeafIndex){
 	Data_1Byte jobStatusLeafEnd = jobStatusLeafStart + CoreLookUpTable_Read4BitTableAccount( (jobStatusLeaf & 0x0F) );
 #if defined(CoreScheduler_EnableCheckRetrig)
 	Data_2Byte k;
-//	Uart_Transmit(Uart_Uart1DeviceIdentify, 0xFF);
-//	_delay_ms(100.0f);
-//	Uart_Transmit(Uart_Uart1DeviceIdentify, jobStatusLeaf);
-//	_delay_ms(100.0f);
-//	Uart_Transmit(Uart_Uart1DeviceIdentify, CoreScheduler_JobTreeLeaf[jobTreeLeafIndex].jobAllowRetrigMask);
-//	_delay_ms(100.0f);
 	jobStatusLeaf &= CoreScheduler_JobTreeLeaf[jobTreeLeafIndex].jobAllowRetrigMask;
-//	Uart_Transmit(Uart_Uart1DeviceIdentify, jobStatusLeaf);
-//	_delay_ms(100.0f);
 	for(j = jobStatusLeafStart; j < jobStatusLeafEnd; j++){
 		if((0x10 << CoreLookUpTable_Read4BitTableaPermutationAndCombination(j)) & jobStatusLeaf){
 			for(k = 0; k < CoreScheduler_JobTreeLeaf[jobTreeLeafIndex].jobTrigTimes[CoreLookUpTable_Read4BitTableaPermutationAndCombination(j)][CoreScheduler_CurrentCheckBuffer]; k++ ){
