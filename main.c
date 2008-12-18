@@ -2,6 +2,7 @@
 #include "SystemInformation.h"
 #include "Driver/Uart/Uart.h"
 #include "Core/CoreScheduler/CoreScheduler.h"
+#include "Core/CoreScheduler/CoreScheduler.config"
 
 //A Big Bug When ID > 32 It Will NOT Triger
 Data_1Byte jobIndex[10] = {
@@ -58,7 +59,12 @@ int main(void ){
 #if defined(CoreScheduler_CheckRetrig)
 	Data_1Byte i;
 	for(i = 0; i < 10; i++) CoreScheduler_AllowRetrigger(jobIndex[i], (i % 2 == 0)?TRUE:FALSE);
+	Uart_Transmit(Uart_Uart1DeviceIdentify, 0xFA);
+	_delay_ms(100.0f);
 #endif
+	
+	Uart_Transmit(Uart_Uart1DeviceIdentify, 0xFB);
+	_delay_ms(100.0f);
 	
 	Uart_Uart1RXCompleteInterruptFunction = CommandIn;
 	CoreScheduler_RunLoop();

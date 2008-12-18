@@ -1,5 +1,8 @@
 #include "CoreScheduler.h"
 
+#include <util/delay.h>
+#include "Driver/Uart/Uart.h"
+
 INLINE void CoreScheduler_CheckAndPushLeaf(Data_1Byte);
 
 void CoreScheduler_Init(void){
@@ -82,6 +85,8 @@ void CoreScheduler_AllowRetrigger(CoreScheduler_JobID id, Data_Boolean enable){
 	else{
 		ClearBit(CoreScheduler_JobTreeLeaf[id >> 2].jobAllowRetrigMask, ((id & 0x03) + 4));
 	}
+	Uart_Transmit(Uart_Uart1DeviceIdentify, CoreScheduler_JobTreeLeaf[id >> 2].jobAllowRetrigMask);
+	_delay_ms(100.0f);
 }
 #endif
 
@@ -110,25 +115,33 @@ void CoreScheduler_Execute(void){
 INLINE void CoreScheduler_CheckAndPushLeaf(Data_1Byte jobTreeLeafIndex){
 	Data_1Byte j;
 	Data_1Byte jobStatusLeaf = CoreScheduler_JobTreeLeaf[jobTreeLeafIndex].jobStatus[CoreScheduler_CurrentCheckBuffer];
-	Data_1Byte jobStatusLeafStart = Porting_ReadByteFromProgramMemory(CoreScheduler_JobLookUpTableLeafStart[jobStatusLeaf & 0x0F]);
-	Data_1Byte jobStatusLeafEnd = jobStatusLeafStart + Porting_ReadByteFromProgramMemory(CoreScheduler_JobLookUpTableLeafNumber[jobStatusLeaf & 0x0F]);
+	Data_1Byte jobStatusLeafStart = CoreLookUpTable_Read4BitTableIndex( (jobStatusLeaf & 0x0F) );
+	Data_1Byte jobStatusLeafEnd = jobStatusLeafStart + CoreLookUpTable_Read4BitTableAccount( (jobStatusLeaf & 0x0F) );
 #if defined(CoreScheduler_EnableCheckRetrig)
 	Data_2Byte k;
+//	Uart_Transmit(Uart_Uart1DeviceIdentify, 0xFF);
+//	_delay_ms(100.0f);
+//	Uart_Transmit(Uart_Uart1DeviceIdentify, jobStatusLeaf);
+//	_delay_ms(100.0f);
+//	Uart_Transmit(Uart_Uart1DeviceIdentify, CoreScheduler_JobTreeLeaf[jobTreeLeafIndex].jobAllowRetrigMask);
+//	_delay_ms(100.0f);
 	jobStatusLeaf &= CoreScheduler_JobTreeLeaf[jobTreeLeafIndex].jobAllowRetrigMask;
+//	Uart_Transmit(Uart_Uart1DeviceIdentify, jobStatusLeaf);
+//	_delay_ms(100.0f);
 	for(j = jobStatusLeafStart; j < jobStatusLeafEnd; j++){
-		if((0x10 << Porting_ReadByteFromProgramMemory(CoreScheduler_JobPermutationAndCombinationLeaf[j])) & jobStatusLeaf){
-			for(k = 0; k < CoreScheduler_JobTreeLeaf[jobTreeLeafIndex].jobTrigTimes[Porting_ReadByteFromProgramMemory(CoreScheduler_JobPermutationAndCombinationLeaf[j])][CoreScheduler_CurrentCheckBuffer]; k++ ){
-				CoreScheduler_QueuePush(CoreScheduler_JobTreeLeaf[jobTreeLeafIndex].jobExecuteFunction[Porting_ReadByteFromProgramMemory(CoreScheduler_JobPermutationAndCombinationLeaf[j])]);
+		if((0x10 << CoreLookUpTable_Read4BitTableaPermutationAndCombination(j)) & jobStatusLeaf){
+			for(k = 0; k < CoreScheduler_JobTreeLeaf[jobTreeLeafIndex].jobTrigTimes[CoreLookUpTable_Read4BitTableaPermutationAndCombination(j)][CoreScheduler_CurrentCheckBuffer]; k++ ){
+				CoreScheduler_QueuePush(CoreScheduler_JobTreeLeaf[jobTreeLeafIndex].jobExecuteFunction[CoreLookUpTable_Read4BitTableaPermutationAndCombination(j)]);
 			}
 		}
 		else{
-			CoreScheduler_QueuePush(CoreScheduler_JobTreeLeaf[jobTreeLeafIndex].jobExecuteFunction[Porting_ReadByteFromProgramMemory(CoreScheduler_JobPermutationAndCombinationLeaf[j])]);
+			CoreScheduler_QueuePush(CoreScheduler_JobTreeLeaf[jobTreeLeafIndex].jobExecuteFunction[CoreLookUpTable_Read4BitTableaPermutationAndCombination(j)]);
 		}
-		CoreScheduler_JobTreeLeaf[jobTreeLeafIndex].jobTrigTimes[Porting_ReadByteFromProgramMemory(CoreScheduler_JobPermutationAndCombinationLeaf[j])][CoreScheduler_CurrentCheckBuffer] = 0;
+		CoreScheduler_JobTreeLeaf[jobTreeLeafIndex].jobTrigTimes[CoreLookUpTable_Read4BitTableaPermutationAndCombination(j)][CoreScheduler_CurrentCheckBuffer] = 0;
 	}
 #else //For defined(CoreScheduler_EnableCheckRetrig)
 	for(j = jobStatusLeafStart; j < jobStatusLeafEnd; j++){
-		CoreScheduler_QueuePush(CoreScheduler_JobTreeLeaf[jobTreeLeafIndex].jobExecuteFunction[Porting_ReadByteFromProgramMemory(CoreScheduler_JobPermutationAndCombinationLeaf[j])]);
+		CoreScheduler_QueuePush(CoreScheduler_JobTreeLeaf[jobTreeLeafIndex].jobExecuteFunction[CoreLookUpTable_Read4BitTableaPermutationAndCombination(j)]);
 	}
 #endif //For defined(CoreScheduler_EnableCheckRetrig)
 	CoreScheduler_JobTreeLeaf[jobTreeLeafIndex].jobStatus[CoreScheduler_CurrentCheckBuffer] = 0;
@@ -150,21 +163,21 @@ void CoreScheduler_CheckAndPush(void){
 #if CoreScheduler_Level > 1
 	Data_2Byte i;
 	Data_1Byte jobStatusNode = CoreScheduler_JobTreeNodeLevel1.childStatus[CoreScheduler_CurrentCheckBuffer];
-	Data_2Byte jobStatusLevel1Start = Porting_Read2ByteFromProgramMemory(CoreScheduler_JobLookUpTableNodeStart[jobStatusNode]);
-	Data_2Byte jobStatusLevel1End = jobStatusLevel1Start + Porting_ReadByteFromProgramMemory(CoreScheduler_JobLookUpTableNodeNumber[jobStatusNode]);
+	Data_2Byte jobStatusLevel1Start = CoreLookUpTable_Read8BitTableIndex(jobStatusNode);
+	Data_2Byte jobStatusLevel1End = jobStatusLevel1Start + CoreLookUpTable_Read8BitTableAccount(jobStatusNode);
 	for(i = jobStatusLevel1Start; i < jobStatusLevel1End; i++ ){
 #if CoreScheduler_Level > 2
 		Data_2Byte j;
 		Data_1Byte jobStatusNode = CoreScheduler_JobTreeNodeLevel2[i].childStatus[CoreScheduler_CurrentCheckBuffer];
-		Data_2Byte jobStatusLevel2Start = Porting_Read2ByteFromProgramMemory(CoreScheduler_JobLookUpTableNodeStart[jobStatusNode]);
-		Data_2Byte jobStatusLevel2End = jobStatusLevel2Start + Porting_ReadByteFromProgramMemory(CoreScheduler_JobLookUpTableNodeNumber[jobStatusNode]);
+		Data_2Byte jobStatusLevel2Start = CoreLookUpTable_Read8BitTableIndex(jobStatusNode);
+		Data_2Byte jobStatusLevel2End = jobStatusLevel2Start + CoreLookUpTable_Read8BitTableAccount(jobStatusNode);
 		Data_1Byte baseNode = i << 3;
 		for(j = jobStatusLevel2Start; j < jobStatusLevel2End; j++ ){
-			CoreScheduler_CheckAndPushLeaf((Porting_ReadByteFromProgramMemory(CoreScheduler_JobPermutationAndCombinationNode[j])) + baseNode);
+			CoreScheduler_CheckAndPushLeaf((CoreLookUpTable_Read8BitTableaPermutationAndCombination(j)) + baseNode);
 		}
 		CoreScheduler_JobTreeNodeLevel2[i].childStatus[CoreScheduler_CurrentCheckBuffer] = 0;
 #else
-		CoreScheduler_CheckAndPushLeaf(Porting_ReadByteFromProgramMemory(CoreScheduler_JobPermutationAndCombinationNode[i]));
+		CoreScheduler_CheckAndPushLeaf(CoreLookUpTable_Read8BitTableaPermutationAndCombination(i));
 #endif
 	}
 	CoreScheduler_JobTreeNodeLevel1.childStatus[CoreScheduler_CurrentCheckBuffer] = 0;

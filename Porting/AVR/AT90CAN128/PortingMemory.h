@@ -4,7 +4,7 @@
 #include <avr/pgmspace.h>
 
 #define Porting_StoreInProgramMemory					PROGMEM
-#define Porting_ReadByteFromProgramMemory(ADDRESS)		pgm_read_byte(&(ADDRESS))
+#define Porting_Read1ByteFromProgramMemory(ADDRESS)		pgm_read_byte(&(ADDRESS))
 #define Porting_Read2ByteFromProgramMemory(ADDRESS)		pgm_read_dword(&(ADDRESS))
 
 #endif
