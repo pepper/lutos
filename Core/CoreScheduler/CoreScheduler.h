@@ -11,18 +11,23 @@
 
 #include "../../SystemInformation.h"
 #include "../CoreBasicFunctionAndVariable/CoreBasicFunctionAndVariable.h"
-#include "../CoreLookUpTable/CoreLookUpTable.h"
 #include "../CoreMemory/CoreMemory.h"
 #include "CoreScheduler.config"
 #include "CoreSchedulerQueue.h"
 
-#define CoreScheduler_QueueResetType	1
-#define CoreScheduler_JobsResetType		2
-
-#if CoreScheduler_Level > 1
-
+#ifndef	CoreLookUpTable_Enable4BitLookUpTable
+#	define	CoreLookUpTable_Enable4BitLookUpTable
 #endif
 
+#if CoreScheduler_Level > 1
+#	ifndef	CoreLookUpTable_Enable8BitLookUpTable
+#		define	CoreLookUpTable_Enable8BitLookUpTable
+#	endif
+#endif
+#include "../CoreLookUpTable/CoreLookUpTable.h"
+
+#define CoreScheduler_QueueResetType	1
+#define CoreScheduler_JobsResetType		2
 
 /** @struct CoreScheduler_JobTreeNodeType 
  *  定義樹狀工作狀態表的中間節點，節點子元素可以指向『節點』或『末枝節點』。

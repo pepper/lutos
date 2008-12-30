@@ -12,7 +12,10 @@ void	CoreMemory_Free(void *point);
 
 //void*	CoreMemory_AllocInStack(CoreMemorySize size)
 #if defined(SystemInformation_AVR)
-	#define CoreMemory_AllocInStack(SIZE) alloca(sizeof(Data_1Byte) * SIZE);
+#	define CoreMemory_AllocInStack(SIZE) alloca(sizeof(Data_1Byte) * SIZE);
 #endif
+
+//Alloc in internal SRAM
+//Alloc in external SRAM
 
 #endif
