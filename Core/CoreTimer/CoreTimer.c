@@ -1,6 +1,9 @@
 #include "CoreTimer.h"
 
-void CoreTimer_Init(Data_4Byte baseTimerClock, Data_1Byte frequencyDividerQuantity){
+void CoreTimer_Init(Data_4Byte baseTimerClock){
 	CoreTimer_BaseTimerClock = baseTimerClock;
-	CoreTimer_FrequencyDividerList = CoreMemory_Alloc(sizeof(CoreTimer_FrequencyDivider) * frequencyDividerQuantity);
+}
+
+void CoreTimer_SetBasicTimerByHz(Data_2Byte hz){
+	
 }

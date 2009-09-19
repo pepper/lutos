@@ -1,8 +1,8 @@
 #include "CoreSchedulerQueue.h"
 
-#include <avr/io.h>
-#include <util/delay.h>
-#include "Driver/Uart/Uart.h"
+CoreScheduler_QueueItemRef	CoreScheduler_HeadJob;
+CoreScheduler_QueueItemRef	CoreScheduler_FootJob;
+Data_4Byte					CoreScheduler_CurrentJobQuantity;
 
 void CoreScheduler_QueueInit(void){
 	CoreScheduler_QueueEmpty();
@@ -20,7 +20,7 @@ void CoreScheduler_QueueEmpty(void){
 
 Data_Boolean CoreScheduler_QueuePush(void (*job)(void)){
 	if(CoreScheduler_CurrentJobQuantity < CoreScheduler_MaximumQueueItemQuantrty){
-		CoreScheduler_QueueItemRef newJob = CoreMemory_Alloc(sizeof(CoreScheduler_QueueItem));
+		CoreScheduler_QueueItemRef newJob = malloc(sizeof(CoreScheduler_QueueItem));
 		newJob->job = job;
 		if(CoreScheduler_FootJob != NULL){
 			CoreScheduler_FootJob->next = newJob;
@@ -55,7 +55,7 @@ void (*CoreScheduler_QueuePop(Data_Boolean *hasItem))(void){
 			CoreScheduler_FootJob = NULL;
 		}
 		CoreScheduler_CurrentJobQuantity--;
-		CoreMemory_Free(deleteJob);
+		free(deleteJob);
 		return resultJob;
 	}
 	*hasItem = FALSE;

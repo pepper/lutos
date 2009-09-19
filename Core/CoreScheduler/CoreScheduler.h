@@ -11,7 +11,6 @@
 
 #include "../../SystemInformation.h"
 #include "../CoreBasicFunctionAndVariable/CoreBasicFunctionAndVariable.h"
-#include "../CoreMemory/CoreMemory.h"
 #include "CoreScheduler.config"
 #include "CoreSchedulerQueue.h"
 
@@ -49,31 +48,6 @@ struct CoreScheduler_JobTreeLeafType {
 	void									(*jobExecuteFunction[4])(void);		///< 工作觸發後要執行之函數的指標（無傳參）
 };
 typedef struct CoreScheduler_JobTreeLeafType CoreScheduler_JobTreeLeafType;
-
-//CoreScheduler_JobTreeNodeType	*CoreScheduler_JobTreeNode[CoreScheduler_Level - 1];
-
-///包含八個子群組的中間節點
-#if CoreScheduler_Level > 1
-CoreScheduler_JobTreeNodeType	CoreScheduler_JobTreeNodeLevel1;
-#endif
-#if CoreScheduler_Level > 2
-CoreScheduler_JobTreeNodeType	CoreScheduler_JobTreeNodeLevel2[8];
-#endif
-
-///包含四個工作的末枝節點，共會有 4 * 8^(Level-1) 個
-CoreScheduler_JobTreeLeafType	CoreScheduler_JobTreeLeaf[CoreScheduler_JobTreeLeafQuantity];
-
-///代表外部模組目前可以改變的狀態旗標
-Data_1Byte	CoreScheduler_CurrentCollectBuffer;
-Data_1Byte	CoreScheduler_CurrentCheckBuffer;
-
-#if defined(CoreScheduler_EnablePauseExecuteJob)
-Data_Boolean	CoreScheduler_PauseExecuteJobState;
-#endif
-
-#if defined(CoreScheduler_EnablePausePushJob)
-Data_Boolean	CoreScheduler_PausePushJobState;
-#endif
 
 void	CoreScheduler_Init(void);
 void	CoreScheduler_RegisterJob(CoreScheduler_JobID id, void (*function)(void));
