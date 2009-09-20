@@ -75,6 +75,9 @@ void CoreScheduler_RegisterJob(CoreScheduler_JobID id, void (*function)(void)){
 }
 
 void CoreScheduler_NeedToWork(CoreScheduler_JobID id){
+	if(id >= CoreScheduler_JobCapability){
+		return;
+	}
 #if defined(CoreScheduler_EnableCheckRetrig)
 	CoreScheduler_JobTreeLeaf[id >> 2].jobStatus[CoreScheduler_CurrentCollectBuffer] |= (((CoreScheduler_JobTreeLeaf[id >> 2].jobStatus[CoreScheduler_CurrentCollectBuffer] & (1 << (id & 0x03))) == 0)? (1 << (id & 0x03)):(1 << ((id & 0x03) + 4)));
 	CoreScheduler_JobTreeLeaf[id >> 2].jobTrigTimes[id & 0x03][CoreScheduler_CurrentCollectBuffer]++;
