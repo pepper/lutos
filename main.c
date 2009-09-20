@@ -68,7 +68,13 @@ int main(void ){
 	ClearBit(PORTD, 4);
 	Uart_Transmit(Uart_Uart1DeviceIdentify,  0xF0);
 	//Porting_SetBasicTimerByHz(100);
-	Porting_ExternalMemoryInit();
+	CoreMemory_Init();
+	if(CoreMemory_MemorySpaceVerify()){
+		Uart_Transmit(Uart_Uart1DeviceIdentify,  0xB8);
+	}
+	else{
+		Uart_Transmit(Uart_Uart1DeviceIdentify,  0xC7);
+	}
 	CoreScheduler_RunLoop();
 	while(1);
 	return 0;

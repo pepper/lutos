@@ -5,6 +5,7 @@
 //Must Fix It!!!
 
 #include "../../SystemInformation.h"
+#include "../../Driver/Uart/Uart.h"
 #include "CoreMemory.config"
 
 #include "../CoreScheduler/CoreScheduler.h"
@@ -17,10 +18,8 @@ void	CoreMemory_Free(void *point);
 #	define CoreMemory_AllocInStack(SIZE) alloca(sizeof(Data_1Byte) * SIZE);
 #endif
 
-//Alloc in internal SRAM
-//Alloc in external SRAM
-
 void						CoreMemory_Init(void);
+Data_Boolean				CoreMemory_MemorySpaceVerify(void);
 void						CoreMemory_Defrag(void);
 CoreMemory_StorageSpaceID	CoreMemory_CreateSpace(Data_1Byte type, CoreMemory_Size size, Data_1Byte elementSize);
 Data_Boolean				CoreMemory_DropSpace(CoreMemory_StorageSpaceID spaceID);

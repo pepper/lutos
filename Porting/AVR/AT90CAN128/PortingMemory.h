@@ -9,7 +9,7 @@
 
 //#deifne	Porting_StoreInExternalMemory
 #define	Porting_ExternalMemoryInit()	{	\
-	XMCRA = 0x08;							\
+	XMCRA = 0x00;							\
 	XMCRB = 0x01;							\
 	XMCRA = XMCRA | (0x80);					\
 	DDRC = DDRC | (0x80);					\
