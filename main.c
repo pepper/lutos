@@ -2,6 +2,7 @@
 #include "SystemInformation.h"
 #include "Driver/Uart/Uart.h"
 #include "Core/CoreScheduler/CoreScheduler.h"
+#include "Core/CoreMemory/CoreMemory.h"
 
 //Data_2Byte x;
 

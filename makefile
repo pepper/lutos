@@ -185,8 +185,7 @@ MATH_LIB = -lm
 # only used for heap (malloc()).
 #EXTMEMOPTS = -Wl,--defsym=__heap_start=0x801100,--defsym=__heap_end=0x80ffff
 
-EXTMEMOPTS = -Wl,--defsym=__heap_start=0x1100,--defsym=__heap_end=0x90FF
-#EXTMEMOPTS =
+EXTMEMOPTS = -Wl,--defsym=__heap_start=0x801100,--defsym=__heap_end=0x8090FF
 
 
 #---------------- Linker Options ----------------
