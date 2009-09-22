@@ -3,6 +3,7 @@
 #include "Driver/Uart/Uart.h"
 #include "Core/CoreScheduler/CoreScheduler.h"
 #include "Core/CoreMemory/CoreMemory.h"
+#include "Core/CoreTimer/CoreTimer.h"
 
 extern Data_1Byte* CoreMemory_PhysicalMemorySpace;
 CoreMemory_Space* space1;
@@ -77,7 +78,7 @@ void Function8(void) {
 }
 void Function9(void) {
 	Uart_Transmit(Uart_Uart1DeviceIdentify, 0xFF);
-	Uart_Transmit(Uart_Uart1DeviceIdentify, 0x03);
+	//Uart_Transmit(Uart_Uart1DeviceIdentify, 0x03);
 }
 
 int main(void ){
@@ -100,8 +101,6 @@ int main(void ){
 #endif
 	
 	Uart_Uart1RXCompleteInterruptFunction = CommandIn;
-	//Uart_Transmit(Uart_Uart1DeviceIdentify,  0xF0);
-	//Porting_SetBasicTimerByHz(100);
 	CoreMemory_Init();
 	if(CoreMemory_MemorySpaceVerify()){
 		Uart_Transmit(Uart_Uart1DeviceIdentify,  0xB8);
@@ -109,20 +108,14 @@ int main(void ){
 	else{
 		Uart_Transmit(Uart_Uart1DeviceIdentify,  0xC7);
 	}
+	CoreTimer_Init();
+	CoreTimer_EnableBaseTimer(TRUE);
 	CoreScheduler_RunLoop();
 	while(1);
 	return 0;
 }
-/*
-ISR(TIMER2_COMP_vect){
-	x++;
-	if(x >= 100){
-		x = 0;
-		Uart_Transmit(Uart_Uart1DeviceIdentify, '.');
-		SwapBit(PORTE, 5);
-	}
-}
 
+/*
 ISR(TIMER2_OVF_vect){
 	//Uart_Transmit(Uart_Uart1DeviceIdentify, 'N');
 }
