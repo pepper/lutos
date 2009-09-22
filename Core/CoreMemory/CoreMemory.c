@@ -53,6 +53,32 @@ Data_Boolean CoreMemory_Defrag(void){
 	return TRUE;
 }
 
+Data_Boolean CoreMemory_DropMemory(void){
+	Data_1Byte i, j;
+	CoreMemory_Size k;
+	for(i = 0; i < CoreMemory_SpaceCurrentQuantity; i++){
+		if(CoreMemory_SpaceList[i].lock == FALSE || CoreMemory_SpaceList[i].used == FALSE){
+			CoreMemory_SpaceList[i].lock = TRUE;
+		}
+		else{
+			for(j = i - 1; ; j--){
+				CoreMemory_SpaceList[j].lock = FALSE;
+				if(j == 0){
+					break;
+				}
+			}
+			return FALSE;
+		}
+	}
+	for(k = 0; k < CoreMemory_ExternalMemorySize; k++){
+		CoreMemory_PhysicalMemorySpace[k] = 0x00;
+	}
+	for(i = 0; i < CoreMemory_SpaceCurrentQuantity; i++){
+		CoreMemory_DeleteSpace(&CoreMemory_SpaceList[i]);
+	}
+	return TRUE;
+}
+
 CoreMemory_Space* CoreMemory_CreateSpace(Data_1Byte type, CoreMemory_Size size, Data_1Byte elementSize){
 	if(CoreMemory_SpaceCurrentQuantity < CoreMemory_SpaceQuantity && (size + CoreMemory_PhysicalMemoryUsedByte) <= CoreMemory_ExternalMemorySize && size % elementSize == 0){
 		CoreMemory_Space* space = &CoreMemory_SpaceList[CoreMemory_SpaceCurrentQuantity];
@@ -80,6 +106,8 @@ Data_Boolean CoreMemory_DeleteSpace(CoreMemory_Space* space){
 	if(space->lock == FALSE){
 		space->lock = TRUE;
 		space->used = FALSE;
+		CoreMemory_PhysicalMemoryUsedByte -= space->size;
+		CoreMemory_SpaceCurrentQuantity--;
 		return TRUE;
 	}
 	return FALSE;
@@ -117,30 +145,62 @@ Data_Boolean CoreMemory_Push(CoreMemory_Space* space, CoreMemory_Size index, voi
 		Data_1Byte* inputData = (Data_1Byte*)data;
 		Data_1Byte i, dataStartAddress;
 		switch(space->type){
-			case CoreMemory_SpaceTypeFIFO:
-			if(space->usedSize + space->elementSize <= space->size){
+			case CoreMemory_SpaceTypeFIFO:{
+				if(space->usedSize + space->elementSize <= space->size){
+					dataStartAddress = space->startAddress + (space->endPoint);
+					for(i = 0; i < space->elementSize; i++){
+						CoreMemory_PhysicalMemorySpace[dataStartAddress + i] = inputData[i];
+					}
+					space->usedSize += space->elementSize;
+					space->endPoint = (space->endPoint + space->elementSize) % space->size;
+					if(space->size == space->usedSize){
+						CoreScheduler_NeedToWork(space->eventJob[CoreMemory_EventHandlerTypeFull]);
+					}
+				}
+				else{
+					space->lock = FALSE;
+					return FALSE;
+				}
+				break;
+			}
+			
+			case CoreMemory_SpaceTypeCircularBuffer:{
 				dataStartAddress = space->startAddress + (space->endPoint);
 				for(i = 0; i < space->elementSize; i++){
 					CoreMemory_PhysicalMemorySpace[dataStartAddress + i] = inputData[i];
 				}
-				space->usedSize += space->elementSize;
 				space->endPoint = (space->endPoint + space->elementSize) % space->size;
+				space->usedSize += space->elementSize;
+				if(space->usedSize > space->size){
+					space->usedSize = space->size;
+					space->startPoint = (space->startPoint + space->elementSize) % space->size;
+					CoreScheduler_NeedToWork(space->eventJob[CoreMemory_EventHandlerTypeCross]);
+				}
+				break;
 			}
-			else{
-				CoreScheduler_NeedToWork(space->eventJob[CoreMemory_EventHandlerTypeCross]);
-				space->lock = FALSE;
-				return FALSE;
+			
+			case CoreMemory_SpaceTypeStack:{
+				if(space->usedSize + space->elementSize <= space->size){
+					dataStartAddress = space->startAddress + (space->endPoint);
+					for(i = 0; i < space->elementSize; i++){
+						CoreMemory_PhysicalMemorySpace[dataStartAddress + i] = inputData[i];
+					}
+					space->usedSize += space->elementSize;
+					space->endPoint = space->endPoint + space->elementSize;
+					if(space->size == space->usedSize){
+						CoreScheduler_NeedToWork(space->eventJob[CoreMemory_EventHandlerTypeFull]);
+					}
+				}
+				else{
+					space->lock = FALSE;
+					return FALSE;
+				}
+				break;
 			}
-			break;
-			case CoreMemory_SpaceTypeCircularBuffer:
-			break;
-			case CoreMemory_SpaceTypeStack:
-			break;
-			case CoreMemory_SpaceTypeCustomType:
-			break;
-		}
-		if(space->size == space->usedSize){
-			CoreScheduler_NeedToWork(space->eventJob[CoreMemory_EventHandlerTypeFull]);
+			
+			case CoreMemory_SpaceTypeCustomType:{
+				break;
+			}
 		}
 		space->lock = FALSE;
 		return TRUE;
@@ -148,21 +208,64 @@ Data_Boolean CoreMemory_Push(CoreMemory_Space* space, CoreMemory_Size index, voi
 	return FALSE;
 }
 
-void CoreMemory_Pop(CoreMemory_Space* space, CoreMemory_Size index,void *data){
+Data_Boolean CoreMemory_Pop(CoreMemory_Space* space, CoreMemory_Size index,void *data){
 	Data_1Byte* outputData = (Data_1Byte*)data;
+	Data_1Byte i, dataStartAddress;
 	switch(space->type){
 		case CoreMemory_SpaceTypeFIFO:
-		break;
 		case CoreMemory_SpaceTypeCircularBuffer:
-		break;
-		case CoreMemory_SpaceTypeStack:
-		break;
-		case CoreMemory_SpaceTypeCustomType:
-		break;
+			if(space->usedSize != 0){
+				dataStartAddress = space->startAddress + (space->startPoint);
+				for(i = 0; i < space->elementSize; i++){
+					outputData[i] = CoreMemory_PhysicalMemorySpace[dataStartAddress + i];
+				}
+				if(space->lock == FALSE){
+					space->lock = TRUE;
+					space->usedSize -= space->elementSize;
+					space->startPoint = (space->startPoint + space->elementSize) % space->size;	
+					space->lock = FALSE;
+					if(space->usedSize == 0){
+						CoreScheduler_NeedToWork(space->eventJob[CoreMemory_EventHandlerTypeEmpty]);
+					}
+				}
+				else{
+					return FALSE;
+				}
+			}
+			else{
+				return FALSE;
+			}
+			break;
+		
+		case CoreMemory_SpaceTypeStack:{
+			if(space->usedSize != 0){
+				dataStartAddress = space->startAddress + (space->endPoint) - space->elementSize;
+				for(i = 0; i < space->elementSize; i++){
+					outputData[i] = CoreMemory_PhysicalMemorySpace[dataStartAddress + i];
+				}
+				if(space->lock == FALSE){
+					space->lock = TRUE;
+					space->usedSize -= space->elementSize;
+					space->endPoint -= space->elementSize;	
+					space->lock = FALSE;
+					if(space->usedSize == 0){
+						CoreScheduler_NeedToWork(space->eventJob[CoreMemory_EventHandlerTypeEmpty]);
+					}
+				}
+				else{
+					return FALSE;
+				}
+			}
+			else{
+				return FALSE;
+			}
+			break;
+		}
+		case CoreMemory_SpaceTypeCustomType:{
+			break;
+		}
 	}
-	//else if(space->usedSize == 0){
-	//	CoreScheduler_NeedToWork(space->eventJob[CoreMemory_EventHandlerTypeEmpty]);
-	//}
+	return TRUE;
 }
 
 void CoreMemory_SetInterrupt(CoreMemory_Space* space, Data_1Byte interruptType, CoreScheduler_JobID jobId){

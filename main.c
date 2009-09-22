@@ -4,7 +4,9 @@
 #include "Core/CoreScheduler/CoreScheduler.h"
 #include "Core/CoreMemory/CoreMemory.h"
 
-//Data_2Byte x;
+extern Data_1Byte* CoreMemory_PhysicalMemorySpace;
+CoreMemory_Space* space1;
+Data_1Byte inputData = 0;
 
 //A Big Bug When ID > 32 It Will NOT Triger
 Data_1Byte jobIndex[10] = {
@@ -12,7 +14,7 @@ Data_1Byte jobIndex[10] = {
 };
 
 void CommandIn(Data_1Byte input){
-	Uart_Transmit(Uart_Uart1DeviceIdentify, input);
+	//Uart_Transmit(Uart_Uart1DeviceIdentify, input);
 	CoreScheduler_NeedToWork(jobIndex[input]);
 }
 
@@ -25,23 +27,60 @@ void BasicFunction(Data_1Byte input){
 	}
 }
 
-void Function0(void) { BasicFunction(0); }
-void Function1(void) { BasicFunction(1); }
-void Function2(void) { BasicFunction(2); }
-void Function3(void) { BasicFunction(3); }
-void Function4(void) { BasicFunction(4); }
+void Function0(void){
+	Data_1Byte i;
+	for(i = 0; i < CoreMemory_ExternalMemorySize; i++){
+		Uart_Transmit(Uart_Uart1DeviceIdentify, CoreMemory_PhysicalMemorySpace[i]);
+	}
+}
+void Function1(void) {
+	CoreMemory_DropMemory();
+}
+void Function2(void) {
+	space1 = CoreMemory_CreateSpace(CoreMemory_SpaceTypeCircularBuffer, 10, 1);
+	CoreMemory_SetInterrupt(space1, CoreMemory_EventHandlerTypeEmpty, jobIndex[7]);
+	CoreMemory_SetInterrupt(space1, CoreMemory_EventHandlerTypeFull, jobIndex[8]);
+	CoreMemory_SetInterrupt(space1, CoreMemory_EventHandlerTypeCross, jobIndex[9]);
+	if(space1 == NULL){
+		Uart_Transmit(Uart_Uart1DeviceIdentify, 0xC7);
+	}
+	else{
+		Uart_Transmit(Uart_Uart1DeviceIdentify, 0xB8);
+	}
+}
+void Function3(void) {
+	inputData++;
+	if(CoreMemory_Push(space1, 0, &inputData) == FALSE){
+		Uart_Transmit(Uart_Uart1DeviceIdentify, 0xFF);
+		Uart_Transmit(Uart_Uart1DeviceIdentify, 0xC7);
+	}
+}
+void Function4(void) {
+	Data_1Byte output = 0x12;
+	if(CoreMemory_Pop(space1, 0, &output) == FALSE){
+		Uart_Transmit(Uart_Uart1DeviceIdentify, 0xFF);
+		Uart_Transmit(Uart_Uart1DeviceIdentify, 0xC7);
+	}
+	else{
+		Uart_Transmit(Uart_Uart1DeviceIdentify, output);
+	}
+}
 void Function5(void) { BasicFunction(5); }
 void Function6(void) { BasicFunction(6); }
-void Function7(void) { BasicFunction(7); }
-void Function8(void) { BasicFunction(8); }
-void Function9(void) { BasicFunction(9); }
+void Function7(void) {
+	Uart_Transmit(Uart_Uart1DeviceIdentify, 0xFF);
+	Uart_Transmit(Uart_Uart1DeviceIdentify, 0x01);
+}
+void Function8(void) {
+	Uart_Transmit(Uart_Uart1DeviceIdentify, 0xFF);
+	Uart_Transmit(Uart_Uart1DeviceIdentify, 0x02);
+}
+void Function9(void) {
+	Uart_Transmit(Uart_Uart1DeviceIdentify, 0xFF);
+	Uart_Transmit(Uart_Uart1DeviceIdentify, 0x03);
+}
 
 int main(void ){
-	DDRB = 0xFF;
-	DDRE = 0xFF;
-	DDRD = 0xFF;
-	PORTD = 0xFF;
-		
 	Uart_Init();
 	CoreScheduler_Init();
 	CoreScheduler_RegisterJob(jobIndex[0], Function0);
@@ -56,18 +95,12 @@ int main(void ){
 	CoreScheduler_RegisterJob(jobIndex[9], Function9);
 	
 #if defined(CoreScheduler_EnableCheckRetrig)
-	Data_1Byte i;
-	for(i = 0; i < 10; i++) CoreScheduler_AllowRetrigger(jobIndex[i], (i % 2 == 0)?TRUE:FALSE);
+	//Data_1Byte i;
+	//for(i = 0; i < 10; i++) CoreScheduler_AllowRetrigger(jobIndex[i], (i % 2 == 0)?TRUE:FALSE);
 #endif
 	
-	Uart_Transmit(Uart_Uart1DeviceIdentify, 0x01);
-	Uart_Transmit(Uart_Uart1DeviceIdentify, 0x02);
-	Uart_Transmit(Uart_Uart1DeviceIdentify, 0x03);
-	Uart_Transmit(Uart_Uart1DeviceIdentify, 0x04);
-	
 	Uart_Uart1RXCompleteInterruptFunction = CommandIn;
-	ClearBit(PORTD, 4);
-	Uart_Transmit(Uart_Uart1DeviceIdentify,  0xF0);
+	//Uart_Transmit(Uart_Uart1DeviceIdentify,  0xF0);
 	//Porting_SetBasicTimerByHz(100);
 	CoreMemory_Init();
 	if(CoreMemory_MemorySpaceVerify()){

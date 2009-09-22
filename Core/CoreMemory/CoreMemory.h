@@ -32,11 +32,12 @@ typedef struct CoreMemory_SpaceMarker CoreMemory_Space;
 void				CoreMemory_Init(void);
 Data_Boolean		CoreMemory_MemorySpaceVerify(void);
 Data_Boolean		CoreMemory_Defrag(void);
+Data_Boolean		CoreMemory_DropMemory(void);
 CoreMemory_Space*	CoreMemory_CreateSpace(Data_1Byte type, CoreMemory_Size size, Data_1Byte elementSize);
 Data_Boolean		CoreMemory_DeleteSpace(CoreMemory_Space* space);
 Data_Boolean		CoreMemory_DropSpace(CoreMemory_Space* space);
 Data_Boolean		CoreMemory_Push(CoreMemory_Space* space, CoreMemory_Size index, void *data);
-void				CoreMemory_Pop(CoreMemory_Space* space, CoreMemory_Size index,void *data);
+Data_Boolean		CoreMemory_Pop(CoreMemory_Space* space, CoreMemory_Size index,void *data);
 void				CoreMemory_SetInterrupt(CoreMemory_Space* space, Data_1Byte interruptType, CoreScheduler_JobID jobId);
 
 #endif
